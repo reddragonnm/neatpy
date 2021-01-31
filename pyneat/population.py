@@ -20,7 +20,7 @@ class Population:
         while True:
             self.epoch(eval_func)
 
-            print(self.best.fitness)
+            print(self.best.fitness, len(self.species), Options.compatibility_threshold, len(self.pool))
 
             if self.best.fitness > Options.fitness_threshold:
                 return self.best, True
@@ -33,20 +33,20 @@ class Population:
             s.spawns_required = Options.population_size * s.average_fitness / total
 
     def speciate(self):
-        for g in self.pool:
+        for brain in self.pool:
             added = False
+
             for s in self.species:
-                compatibility = self.compatibility_score(g, s.leader)
-                if compatibility <= Options.compatibility_threshold:
-                    s.pool.append(g)
+                if s.same_species(brain):
+                    s.pool.append(brain)
                     added = True
                     break
 
             if not added:
-                self.species.append(Species(self.next_species_id, g))
+                self.species.append(Species(self.next_species_id, brain))
                 self.next_species_id += 1
 
-        self.species[:] = filter(lambda s: len(s.pool) > 0, self.species)
+        self.species = [sp for sp in self.species if len(sp.pool) > 0]
 
     def calc_spawns(self):
         total = sum([s.average_fitness for s in self.species])
@@ -227,50 +227,3 @@ class Population:
             random.choice(baby_connections).enabled = True
 
         return Brain(baby_id, baby_nodes, baby_connections)
-
-    @staticmethod
-    def compatibility_score(genome1, genome2):
-        n_match = n_disjoint = n_excess = 0
-        weight_difference = 0
-
-        n_g1 = len(genome1.connections)
-        n_g2 = len(genome2.connections)
-        i_g1 = i_g2 = 0
-
-        while i_g1 < n_g1 or i_g2 < n_g2:
-            # excess
-            if i_g1 == n_g1:
-                n_excess += 1
-                i_g2 += 1
-                continue
-
-            if i_g2 == n_g2:
-                n_excess += 1
-                i_g1 += 1
-                continue
-
-            conn1 = genome1.connections[i_g1]
-            conn2 = genome2.connections[i_g2]
-
-            # match
-            if conn1.innov == conn2.innov:
-                n_match += 1
-                i_g1 += 1
-                i_g2 += 1
-                weight_difference = weight_difference + abs(conn1.weight-conn2.weight)
-                continue
-
-            # disjoint
-            if conn1.innov < conn2.innov:
-                n_disjoint += 1
-                i_g1 += 1
-                continue
-
-            if conn1.innov > conn2.innov:
-                n_disjoint += 1
-                i_g2 += 1
-                continue
-            
-        n_match += 1 # if not fully connected match can be zero and dividing by zero is bad
-        score = (1.0*n_excess + 1.0*n_disjoint)/max(n_g1,n_g2) + 0.5*weight_difference/n_match
-        return score

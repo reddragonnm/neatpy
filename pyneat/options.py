@@ -9,6 +9,10 @@ class Options:
 
         max_nodes=float('inf'),
 
+        excess_coeff=1,
+        disjoint_coeff=1,
+        weight_coeff=0.5,
+
         add_node_prob=0.02,
         add_conn_prob=0.05,
 
@@ -39,6 +43,10 @@ class Options:
         Options.fitness_threshold = fitness_threshold
 
         Options.max_nodes = max_nodes
+
+        Options.excess_coeff = excess_coeff
+        Options.disjoint_coeff = disjoint_coeff
+        Options.weight_coeff = weight_coeff
 
         Options.add_node_prob = add_node_prob     
         Options.add_conn_prob = add_conn_prob   
