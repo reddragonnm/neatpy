@@ -24,6 +24,8 @@ class Options:
         feature_selection=False,
 
         compatibility_threshold=3,
+        dynamic_compatibility_threshold=True,
+
         target_species=20,
         dropoff_age=15,
         survival_rate=0.2,
@@ -59,6 +61,8 @@ class Options:
         Options.feature_selection = feature_selection
 
         Options.compatibility_threshold = compatibility_threshold
+        Options.dynamic_compatibility_threshold = dynamic_compatibility_threshold
+
         Options.target_species = target_species
         Options.dropoff_age = dropoff_age
         Options.survival_rate = survival_rate

@@ -12,9 +12,9 @@ def evaluate(nns):
             output = nn.predict(xi)[0]
             nn.fitness -= (output - xo) ** 2
 
-Options.set_options(2, 1, 150, 3.9)
+Options.set_options(2, 1, 150, 3.9, target_species=10)
 
 p = Population()
-best, solved = p.evaluate(evaluate, 300)
+best, solved = p.evaluate(evaluate, 400)
 
-print(p.gen)
+print(p.gen, solved)

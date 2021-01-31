@@ -60,7 +60,7 @@ class Population:
             s.pool[:] = []
 
             if Options.species_elitism:
-                s.pool.append(s.leader)
+                s.pool.append(s.best)
 
             while len(s.pool) < s.spawns_required:                
                 g1 = self.tournament_selection(pool)
@@ -93,30 +93,8 @@ class Population:
 
     def adjust_fitnesses(self):
         for s in self.species:
-            s.pool.sort(key=lambda x: x.fitness, reverse=True)
-            s.leader = s.pool[0]
-
-            if s.leader.fitness > s.max_fitness:
-                s.generations_not_improved = 0
-            else:
-                s.generations_not_improved += 1
-            s.max_fitness = s.leader.fitness
-
-            # adjust fitness
-            sum_fitness = 0.0
-            for m in s.pool:
-                fitness = m.fitness
-                sum_fitness += fitness
-                # boost young species
-                if s.age < Options.young_age_threshhold:
-                    fitness *= Options.young_age_fitness_bonus
-                # punish old species
-                if s.age > Options.old_age_threshold:
-                    fitness *= Options.old_age_fitness_penalty
-                # apply fitness sharing to adjusted fitnesses
-                m.adjusted_fitness = fitness/len(s.pool)
-
-            s.average_fitness = sum_fitness/len(s.pool)
+            s.make_leader()
+            s.adjust_fitnesses()
 
     def change_compatibility_threshold(self):
         if len(self.species) < Options.target_species:
@@ -129,7 +107,10 @@ class Population:
         self.sort_pool()
 
         self.speciate()
-        self.change_compatibility_threshold()
+
+        if Options.dynamic_compatibility_threshold:
+            self.change_compatibility_threshold()
+
         self.adjust_fitnesses()
 
         self.calc_spawns()

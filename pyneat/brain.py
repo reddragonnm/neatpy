@@ -9,12 +9,10 @@ from .options import Options
 class Brain:
     def __init__(self, genome_id, nodes=None, connections=None):
         self.id = genome_id
+        self.fitness = 0
 
         self.nodes = nodes
         self.connections = connections
-
-        self.fitness = 0
-        self.adjusted_fitness = 0
 
         if nodes is not None:            
             self.nodes.sort(key=lambda x: x.id)

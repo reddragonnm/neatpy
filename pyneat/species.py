@@ -2,7 +2,7 @@ from .options import Options
 
 class Species:
     def __init__(self, species_id, member):
-        self.leader = member
+        self.best = member
         
         self.pool = [member]
         self.id = species_id
@@ -18,6 +18,31 @@ class Species:
     def purge(self):
         self.age += 1
         self.pool = []
+
+    def adjust_fitnesses(self):
+        total = 0
+        for m in self.pool:
+            fitness = m.fitness
+
+            if self.age < Options.young_age_threshhold:
+                fitness *= Options.young_age_fitness_bonus
+
+            if self.age > Options.old_age_threshold:
+                fitness *= Options.old_age_fitness_penalty
+
+            total += fitness / len(self.pool)
+
+        self.average_fitness = total
+
+    def make_leader(self):
+        self.pool.sort(key=lambda x: x.fitness, reverse=True)
+        self.best = self.pool[0]
+
+        if self.best.fitness > self.max_fitness:
+            self.stagnation = 0
+        else:
+            self.stagnation += 1
+        self.max_fitness = self.best.fitness
 
     @staticmethod
     def compat_dist(genome1, genome2):
@@ -66,4 +91,4 @@ class Species:
         return (Options.excess_coeff * n_excess + Options.disjoint_coeff * n_disjoint) / max(n_g1, n_g2) + Options.weight_coeff * weight_difference / n_match
 
     def same_species(self, brain):
-        return Species.compat_dist(brain, self.leader) <= Options.compatibility_threshold
+        return Species.compat_dist(brain, self.best) <= Options.compatibility_threshold
