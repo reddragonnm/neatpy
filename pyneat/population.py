@@ -43,10 +43,9 @@ class Population:
                     break
 
             if not added:
-                self.species.append(Species(g, self.next_species_id))
+                self.species.append(Species(self.next_species_id, g))
                 self.next_species_id += 1
 
-        # remove empty species
         self.species[:] = filter(lambda s: len(s.pool) > 0, self.species)
 
     def calc_spawns(self):
@@ -79,8 +78,7 @@ class Population:
         self.pool[:] = []
         for s in self.species:
             self.pool.extend(s.pool)
-            s.pool[:] = []
-            s.age += 1
+            s.purge()
 
         while len(self.pool) < Options.population_size:
             genome = Brain(self.next_genome_id)
