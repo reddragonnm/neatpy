@@ -12,3 +12,32 @@ Some reasons to use neatpy:
 ```
 pip install neatpy
 ```
+
+## Basic XOR example
+```
+from neatpy.options import Options # import options class for configuration
+from neatpy.population import Population # import population class
+
+# XOR inputs and outputs
+xor_inp = [(0,0), (0,1), (1,0), (1,1)]
+xor_out = [0, 1, 1, 0]
+
+# evaluate function
+def evaluate(nns):
+    for nn in nns:
+        nn.fitness = 4
+    
+        for xi, xo in zip(xor_inp, xor_out):
+            output = nn.predict(xi)[0]
+            nn.fitness -= (output - xo) ** 2
+
+# number of inputs - number of outputs - population size - maximum fitness needed
+Options.set_options(2, 1, 150, 3.9)
+
+p = Population()
+best, solved = p.evaluate(evaluate, 400) # evaluating population for 400 generations or till maximum fitness is reached
+
+# testing the best neural network
+evaluate([best])
+print(best.fitness)
+```
