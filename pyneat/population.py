@@ -27,18 +27,13 @@ class Population:
             elif self.gen >= num_generations:
                 return self.best, False
 
-    def calc_spawns(self):
-        total = sum([s.average_fitness for s in self.species])
-        for s in self.species:
-            s.spawns_required = Options.population_size * s.average_fitness / total
-
     def speciate(self):
         for brain in self.pool:
             added = False
 
-            for s in self.species:
-                if s.same_species(brain):
-                    s.pool.append(brain)
+            for sp in self.species:
+                if sp.same_species(brain):
+                    sp.pool.append(brain)
                     added = True
                     break
 
@@ -49,36 +44,35 @@ class Population:
         self.species = [sp for sp in self.species if len(sp.pool) > 0]
 
     def calc_spawns(self):
-        total = sum([s.average_fitness for s in self.species])
-        for s in self.species:
-            s.spawns_required = Options.population_size * s.average_fitness / total
+        total = sum([sp.average_fitness for sp in self.species])
+        for sp in self.species:
+            sp.spawns_required = Options.population_size * sp.average_fitness / total
 
     def reproduce(self):
+        new_pop = []
         for s in self.species:
-            k = max(1, int(round(len(s.pool) * Options.survival_rate)))
-            pool = s.pool[:k]
-            s.pool[:] = []
+            new_pool = []
 
             if Options.species_elitism:
-                s.pool.append(s.best)
+                new_pool.append(s.best)
 
-            while len(s.pool) < s.spawns_required:                
-                g1 = self.tournament_selection(pool)
+            while len(new_pool) < s.spawns_required:                
+                brain1 = self.tournament_selection(s.pool)
 
                 if random.random() < Options.crossover_rate:
-                    g2 = self.tournament_selection(pool)
-                    child = self.crossover(g1, g2, self.next_genome_id)
+                    brain2 = self.tournament_selection(s.pool)
+                    child = self.crossover(brain1, brain2, self.next_genome_id)
                     self.next_genome_id += 1
                 else:
-                    child = copy.copy(g1)
+                    child = copy.copy(brain1)
 
                 child.mutate()
-                s.pool.append(child)
+                new_pool.append(child)
 
-        self.pool[:] = []
-        for s in self.species:
-            self.pool.extend(s.pool)
+            new_pop.extend(new_pool)
             s.purge()
+
+        self.pool = new_pop
 
         while len(self.pool) < Options.population_size:
             genome = Brain(self.next_genome_id)
@@ -99,11 +93,25 @@ class Population:
     def change_compatibility_threshold(self):
         if len(self.species) < Options.target_species:
             Options.compatibility_threshold *= 0.95
+
         elif len(self.species) > Options.target_species:
             Options.compatibility_threshold *= 1.05
 
+    def reset_and_kill(self):
+        new_species = []
+        
+        for sp in self.species:
+            if sp.stagnation > Options.dropoff_age or sp.spawns_required == 0:
+                continue
+
+            sp.pool = sp.pool[:max(1, round(len(sp.pool) * Options.survival_rate))]
+            new_species.append(sp)
+
+        self.species = new_species
+
     def epoch(self, evaluate):
         evaluate(self.pool)
+
         self.sort_pool()
 
         self.speciate()
@@ -112,9 +120,9 @@ class Population:
             self.change_compatibility_threshold()
 
         self.adjust_fitnesses()
-
         self.calc_spawns()
-        self.species = [s for s in self.species if s.stagnation < Options.dropoff_age and s.spawns_required > 0]
+        
+        self.reset_and_kill()
         self.reproduce()        
 
         self.gen += 1

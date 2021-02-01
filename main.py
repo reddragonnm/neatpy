@@ -1,4 +1,3 @@
-import time
 from pyneat import Population, Options
 
 xor_inp = [(0,0), (0,1), (1,0), (1,1)]
@@ -12,7 +11,7 @@ def evaluate(nns):
             output = nn.predict(xi)[0]
             nn.fitness -= (output - xo) ** 2
 
-Options.set_options(2, 1, 150, 3.9, target_species=10)
+Options.set_options(2, 1, 150, 3.9)
 
 p = Population()
 best, solved = p.evaluate(evaluate, 400)

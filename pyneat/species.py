@@ -17,6 +17,7 @@ class Species:
 
     def purge(self):
         self.age += 1
+        self.stagnation += 1
         self.pool = []
 
     def adjust_fitnesses(self):
@@ -40,8 +41,6 @@ class Species:
 
         if self.best.fitness > self.max_fitness:
             self.stagnation = 0
-        else:
-            self.stagnation += 1
         self.max_fitness = self.best.fitness
 
     @staticmethod
