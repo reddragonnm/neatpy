@@ -3,10 +3,12 @@ neatpy is a library that implements the NEAT algorithm designed by Kenneth O. St
 
 ## Why neatpy?
 Some reasons to use neatpy:
-  Easy to use
-  Code is easier to understand
-  Can be translated to other languages without much difficulty
-  Little to no knowledge of configuration is required to get started
+- Easy to use
+- Code is easier to understand
+- Can be translated to other languages without much difficulty
+- Little to no knowledge of configuration is required to get started
   
 ## Installation
- ```pip install neatpy```
+```
+pip install neatpy
+```
