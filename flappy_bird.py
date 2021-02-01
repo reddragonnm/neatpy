@@ -1,7 +1,7 @@
 # importing all modules
 import pygame as pg  # simulation module
 
-from pyneat import Population
+from pyneat import Population, Options  
 
 from collections import deque  # deque is just a list with maximum size and removes old items automatically
 from random import randint  # just to set the pipe's y position
@@ -245,8 +245,6 @@ class GameEnv:
 env = GameEnv() ##
 ##################
 
-p = Population(4, 1)
-
 def eval_genomes(nns):
     global fps
 
@@ -298,8 +296,10 @@ def eval_genomes(nns):
         fps_clock.tick(fps)
 
 def main():
-    for i in range(1000):
-        p.epoch(eval_genomes)
+    Options.set_options(4, 1, 200, 100000000)
+
+    p = Population()
+    p.evaluate(eval_genomes, 1000000)
 
 # and this is just calling the main function
 if __name__ == '__main__':
