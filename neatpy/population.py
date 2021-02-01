@@ -18,7 +18,8 @@ class Population:
 
     def evaluate(self, eval_func, num_generations=float('inf')):
         while True:
-            self.epoch(eval_func)
+            eval_func(self.pool)
+            self.epoch()
 
             print(self)
 
@@ -111,9 +112,7 @@ class Population:
 
         self.species = new_species
 
-    def epoch(self, evaluate):
-        evaluate(self.pool)
-
+    def epoch(self):
         self._sort_pool()
         self._speciate()
 
