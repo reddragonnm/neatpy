@@ -1,10 +1,10 @@
 # importing all modules
-from pyneat.activations import clamped, tanh
+from neatpy.activations import clamped, tanh
 import pygame as pg  # simulation module
 
-from pyneat.population import Population
-from pyneat.options import Options
-from pyneat.population import Population 
+from neatpy.population import Population
+from neatpy.options import Options
+from neatpy.population import Population 
 
 from collections import deque  # deque is just a list with maximum size and removes old items automatically
 from random import randint  # just to set the pipe's y position
