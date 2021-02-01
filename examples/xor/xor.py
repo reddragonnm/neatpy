@@ -18,7 +18,5 @@ Options.set_options(2, 1, 150, 3.9)
 p = Population()
 best, solved = p.evaluate(evaluate, 400)
 
-# print(p.gen, solved)
-
 evaluate([best])
 print(best.fitness)

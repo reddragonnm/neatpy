@@ -8,9 +8,23 @@ from .options import Options
 
 class Brain:
     def __init__(self, genome_id, nodes=None, connections=None):
+        """Initialises a Brain object
+
+        Args:
+            genome_id (int): ID of the Brain object
+            nodes (List[Node], optional): Contains a list of nodes generated during crossover. Defaults to None.
+            connections (List[Connection], optional): Contains list of connections during crossover. Defaults to None.
+
+        Contains:
+            id (int): ID of the Brain
+            fitness (float): Fitness of the Brain
+
+            nodes (List[Node]): List of nodes. If it is None then nodes are initialised
+            connections (List[Connections]): List of connections. If nodes is None then connections are initialised
+        """
+
         self.id = genome_id
         self.fitness = 0
-        self.positive_fitness = 0
 
         self.nodes = nodes
         self.connections = connections
@@ -63,9 +77,16 @@ class Brain:
                     )
 
     def filter_nodes(self, *args):
+        """Filters all nodes according to states which are taken as args
+
+        Returns:
+            List[Node]: List of nodes
+        """
         return [node for node in self.nodes if node.state in args]
 
     def add_conn(self):
+        """Adds a new connection between 2 nodes
+        """
         valid = []
 
         for node1 in self.nodes:
@@ -85,6 +106,8 @@ class Brain:
             )
 
     def add_node(self):
+        """Adds a new node by splitting a connection
+        """
         valid = [conn for conn in self.connections if conn.enabled and self.get_node(conn.fr).state != NodeState.bias]
 
         if valid:
@@ -130,6 +153,8 @@ class Brain:
             )
 
     def mutate(self):
+        """Mutates the Brain according mutation rates defined in Options
+        """
         if random.random() < Options.add_node_prob and len(self.nodes) < Options.max_nodes:
             self.add_node()
 
@@ -144,14 +169,39 @@ class Brain:
                     conn.weight += random.uniform(-1, 1) * Options.weight_mutate_power
 
     def get_input_connections(self, node_id):
+        """Returns all connections where the connection leads to a node with given node_id
+
+        Args:
+            node_id (int): ID of the node
+
+        Returns:
+            List[Connections]: List of the connections where connection.to is node_id
+        """
         return [conn for conn in self.connections if conn.to == node_id]
 
     def get_node(self, node_id):
+        """Returns node with given node_id in self.nodes
+
+        Args:
+            node_id (int): ID of the node
+
+        Returns:
+            Node: The Node which has the id -> node_id
+        """
         for node in self.nodes:
             if node.id == node_id:
                 return node
 
     def valid_conn(self, node1, node2):
+        """Checks if the connection between the given nodes is possible
+
+        Args:
+            node1 (Node): First node
+            node2 (Node): Second node
+
+        Returns:
+            bool: Is the connection valid
+        """
         for conn in self.connections:
             if conn.fr == node1.id and conn.to == node2.id:
                 return False
@@ -159,6 +209,16 @@ class Brain:
         return node1.id != node2.id and node1.state in [NodeState.input, NodeState.hidden, NodeState.bias] and node2.state in [NodeState.hidden, NodeState.output] and node1.y <= node2.y
 
     def predict(self, inputs):
+        """Predict the outputs based on the given inputs
+
+        Args:
+            inputs (List[float]): The inputs to the neural network
+
+        Returns:
+            List[float]: Outputs to the neural network
+        """
+        assert len(inputs) == Options.num_inputs
+
         depth = len(set([nn.y for nn in self.nodes]))
 
         for node in self.nodes:
