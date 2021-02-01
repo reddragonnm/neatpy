@@ -3,7 +3,7 @@ import random
 from .innovation import InnovTable
 from .node import NodeState, Node
 from .connection import Connection
-from .activations import sigmoid
+
 from .options import Options
 
 class Brain:
@@ -177,6 +177,6 @@ class Brain:
                     for conn in self.get_input_connections(node.id):
                         if conn.enabled: sum += conn.weight * self.get_node(conn.fr).val
 
-                    node.val = sigmoid(sum)
+                    node.val = Options.activation_func(sum)
 
         return [node.val for node in self.nodes if node.state == NodeState.output]

@@ -1,3 +1,5 @@
+from .activations import sigmoid
+
 class Options:
 
     @staticmethod
@@ -8,6 +10,7 @@ class Options:
         fitness_threshold,
 
         max_nodes=float('inf'),
+        activation_func=sigmoid,
 
         excess_coeff=1,
         disjoint_coeff=1,
@@ -45,6 +48,7 @@ class Options:
         Options.fitness_threshold = fitness_threshold
 
         Options.max_nodes = max_nodes
+        Options.activation_func = activation_func
 
         Options.excess_coeff = excess_coeff
         Options.disjoint_coeff = disjoint_coeff

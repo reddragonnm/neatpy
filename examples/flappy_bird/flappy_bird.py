@@ -1,7 +1,10 @@
 # importing all modules
+from pyneat.activations import tanh
 import pygame as pg  # simulation module
 
-from pyneat import Population, Options  
+from pyneat.population import Population
+from pyneat.options import Options
+from pyneat.population import Population 
 
 from collections import deque  # deque is just a list with maximum size and removes old items automatically
 from random import randint  # just to set the pipe's y position
@@ -220,7 +223,7 @@ class GameEnv:
             # just think according to the information given by the above method
             output = bird.nn.predict(self.get_info(bird))
 
-            if output[0] > 0.5:
+            if output[0] > 0:
                 bird.jump()
 
     def all_dead(self):
@@ -288,15 +291,12 @@ def eval_genomes(nns):
                 elif event.key == pg.K_DOWN:
                     fps -= 5
 
-                elif event.key == pg.K_g:
-                    print(p.best.nodes)
-
         # update the screen and respect the fps (just do everything according to the fps)
         pg.display.update()
         fps_clock.tick(fps)
 
 def main():
-    Options.set_options(4, 1, 200, 100000000)
+    Options.set_options(4, 1, 200, 100000000, activation_func=tanh, target_species=10, excess_coeff=2, disjoint_coeff=2, weight_coeff=2, weight_mutate_prob=0.3)
 
     p = Population()
     p.evaluate(eval_genomes, 1000000)
