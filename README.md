@@ -48,7 +48,7 @@ print(best.fitness)
 
 ## XOR Loose example
 Imitating the evaluate method in Population() we can write the above code as:
-```
+```python
 from neatpy.options import Options
 from neatpy.population import Population
 
@@ -74,3 +74,4 @@ while p.best.fitness < max_fitness:
 
 best = p.best # best brain 
 ```
+### Enjoy 🥳
