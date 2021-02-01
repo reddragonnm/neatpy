@@ -14,7 +14,7 @@ pip install neatpy
 ```
 
 ## Basic XOR example
-```
+```python
 from neatpy.options import Options # import options class for configuration
 from neatpy.population import Population # import population class
 
