@@ -23,8 +23,8 @@ xor_inp = [(0,0), (0,1), (1,0), (1,1)]
 xor_out = [0, 1, 1, 0]
 
 # evaluate function
-def evaluate(nns):
-    for nn in nns:
+def evaluate(brains):
+    for nn in brains:
         nn.fitness = 4
     
         for xi, xo in zip(xor_inp, xor_out):
@@ -41,3 +41,7 @@ best, solved = p.evaluate(evaluate, 400) # evaluating population for 400 generat
 evaluate([best])
 print(best.fitness)
 ```
+## Notes
+- For every environment an `evaluate` function needs to be created that takes every generation's population
+- To customize the algorithm even further, optional arguments in `Options.set_options` can be tweaked
+- When the evaluation ends the method returns the best brain and whether the environment was solved (maximum fitness reached) or not
