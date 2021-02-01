@@ -9,4 +9,4 @@ Some reasons to use neatpy:
   Little to no knowledge of configuration is required to get started
   
 ## Installation
- `pip install neatpy`
+ ```pip install neatpy```
