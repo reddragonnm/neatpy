@@ -44,7 +44,7 @@ class Population:
         self.species = [sp for sp in self.species if len(sp.pool) > 0]
 
     def _calc_spawns(self):
-        total = sum([sp.average_fitness for sp in self.species])
+        total = max(1, sum([sp.average_fitness for sp in self.species]))
         for sp in self.species:
             sp.spawns_required = Options.population_size * sp.average_fitness / total
 
@@ -82,12 +82,14 @@ class Population:
     def _sort_pool(self):
         self.pool.sort(key=lambda x: x.fitness, reverse=True)
 
+        assert self.pool[-1].fitness >= 0, "Cannot handle negative fitness values"
+
         if self.best.fitness < self.pool[0].fitness:
             self.best = self.pool[0]
 
     def _adjust_fitnesses(self):
         for s in self.species:
-            s.make_leader()
+            s._make_leader()
             s._adjust_fitnesses()
 
     def _change_compatibility_threshold(self):
@@ -113,7 +115,6 @@ class Population:
         evaluate(self.pool)
 
         self._sort_pool()
-
         self._speciate()
 
         if Options.dynamic_compatibility_threshold:

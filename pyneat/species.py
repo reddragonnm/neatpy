@@ -35,7 +35,7 @@ class Species:
 
         self.average_fitness = total
 
-    def make_leader(self):
+    def _make_leader(self):
         self.pool.sort(key=lambda x: x.fitness, reverse=True)
         self.best = self.pool[0]
 

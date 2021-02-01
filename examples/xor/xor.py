@@ -1,5 +1,6 @@
 from pyneat.options import Options
 from pyneat.population import Population
+from pyneat.activations import tanh
 
 xor_inp = [(0,0), (0,1), (1,0), (1,1)]
 xor_out = [0, 1, 1, 0]

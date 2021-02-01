@@ -10,6 +10,7 @@ class Brain:
     def __init__(self, genome_id, nodes=None, connections=None):
         self.id = genome_id
         self.fitness = 0
+        self.positive_fitness = 0
 
         self.nodes = nodes
         self.connections = connections

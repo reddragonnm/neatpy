@@ -1,5 +1,5 @@
 # importing all modules
-from pyneat.activations import tanh
+from pyneat.activations import clamped, tanh
 import pygame as pg  # simulation module
 
 from pyneat.population import Population
@@ -26,7 +26,7 @@ RED = 255, 0, 0
 GREEN = 0, 255, 0
 
 # defining the fps or the speed of the game (can be increased or decreased using up and down arrow keys)
-fps = 20
+fps = 2**10
 fps_clock = pg.time.Clock()
 
 # the bird class
@@ -286,17 +286,17 @@ def eval_genomes(nns):
             if event.type == pg.KEYDOWN:
                 # up key to increase the fps
                 if event.key == pg.K_UP:
-                    fps += 5
+                    fps *= 2
                 # down key to decrease the fps
                 elif event.key == pg.K_DOWN:
-                    fps -= 5
+                    fps /= 2
 
         # update the screen and respect the fps (just do everything according to the fps)
         pg.display.update()
         fps_clock.tick(fps)
 
 def main():
-    Options.set_options(4, 1, 200, 100000000, activation_func=tanh, target_species=10, excess_coeff=2, disjoint_coeff=2, weight_coeff=2, weight_mutate_prob=0.3)
+    Options.set_options(4, 1, 200, 100000000, activation_func=tanh, target_species=10, excess_coeff=2, disjoint_coeff=2, weight_coeff=2, weight_mutate_prob=0.5)
 
     p = Population()
     p.evaluate(eval_genomes, 1000000)
