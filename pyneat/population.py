@@ -20,14 +20,14 @@ class Population:
         while True:
             self.epoch(eval_func)
 
-            print(self.best.fitness, len(self.species), Options.compatibility_threshold, len(self.pool))
+            print(self)
 
             if self.best.fitness > Options.fitness_threshold:
                 return self.best, True
             elif self.gen >= num_generations:
                 return self.best, False
 
-    def speciate(self):
+    def _speciate(self):
         for brain in self.pool:
             added = False
 
@@ -43,12 +43,12 @@ class Population:
 
         self.species = [sp for sp in self.species if len(sp.pool) > 0]
 
-    def calc_spawns(self):
+    def _calc_spawns(self):
         total = sum([sp.average_fitness for sp in self.species])
         for sp in self.species:
             sp.spawns_required = Options.population_size * sp.average_fitness / total
 
-    def reproduce(self):
+    def _reproduce(self):
         new_pop = []
         for s in self.species:
             new_pool = []
@@ -79,25 +79,25 @@ class Population:
             self.pool.append(genome)
             self.next_genome_id += 1
 
-    def sort_pool(self):
+    def _sort_pool(self):
         self.pool.sort(key=lambda x: x.fitness, reverse=True)
 
         if self.best.fitness < self.pool[0].fitness:
             self.best = self.pool[0]
 
-    def adjust_fitnesses(self):
+    def _adjust_fitnesses(self):
         for s in self.species:
             s.make_leader()
-            s.adjust_fitnesses()
+            s._adjust_fitnesses()
 
-    def change_compatibility_threshold(self):
+    def _change_compatibility_threshold(self):
         if len(self.species) < Options.target_species:
             Options.compatibility_threshold *= 0.95
 
         elif len(self.species) > Options.target_species:
             Options.compatibility_threshold *= 1.05
 
-    def reset_and_kill(self):
+    def _reset_and_kill(self):
         new_species = []
         
         for sp in self.species:
@@ -112,18 +112,18 @@ class Population:
     def epoch(self, evaluate):
         evaluate(self.pool)
 
-        self.sort_pool()
+        self._sort_pool()
 
-        self.speciate()
+        self._speciate()
 
         if Options.dynamic_compatibility_threshold:
-            self.change_compatibility_threshold()
+            self._change_compatibility_threshold()
 
-        self.adjust_fitnesses()
-        self.calc_spawns()
+        self._adjust_fitnesses()
+        self._calc_spawns()
         
-        self.reset_and_kill()
-        self.reproduce()        
+        self._reset_and_kill()
+        self._reproduce()        
 
         self.gen += 1
 
@@ -136,7 +136,8 @@ class Population:
                 champion = g
         return champion
 
-    def crossover(self, mum, dad, baby_id=None):
+    @staticmethod
+    def crossover(mum, dad, baby_id=None):
         n_mum = len(mum.connections)
         n_dad = len(dad.connections)
 
@@ -152,45 +153,51 @@ class Population:
         else:
             better = dad
 
-        baby_nodes = []   # node genes
-        baby_connections = []     # conn genes
+        baby_nodes = []
+        baby_connections = []
 
-        # iterate over parent genes
         i_mum = i_dad = 0
         node_ids = set()
+
         while i_mum < n_mum or i_dad < n_dad:
             mum_gene = mum.connections[i_mum] if i_mum < n_mum else None
             dad_gene = dad.connections[i_dad] if i_dad < n_dad else None
+
             selected_gene = None
+            selected_genome = None
+
             if mum_gene and dad_gene:
                 if mum_gene.innov == dad_gene.innov:
                     selected_gene, selected_genome = random.choice([(mum_gene, mum), (dad_gene, dad)])
 
                     i_mum += 1
                     i_dad += 1
+
                 elif dad_gene.innov < mum_gene.innov:
                     if better == dad:
                         selected_gene = dad.connections[i_dad]
                         selected_genome = dad
                     i_dad += 1
+
                 elif mum_gene.innov < dad_gene.innov:
                     if better == mum:
                         selected_gene = mum_gene
                         selected_genome = mum
                     i_mum += 1
+
             elif mum_gene == None and dad_gene:
                 if better == dad:
                     selected_gene = dad.connections[i_dad]
                     selected_genome = dad
                 i_dad += 1
+
             elif mum_gene and dad_gene == None:
                 if better == mum:
                     selected_gene = mum_gene
                     selected_genome = mum
                 i_mum += 1
 
-            if selected_gene != None:
-                # inherit conn
+            if selected_gene is not None and selected_genome is not None:
                 baby_connections.append(copy.copy(selected_gene))
 
                 # inherit nodes
@@ -216,3 +223,19 @@ class Population:
             random.choice(baby_connections).enabled = True
 
         return Brain(baby_id, baby_nodes, baby_connections)
+
+    def __str__(self):
+        b = self.best
+        s = '\nGeneration %s' %(self.gen)
+        s += '\nBest id %s fitness %0.5f neurons %s links %s' % (b.id, b.fitness, len(b.nodes), len(b.connections))
+        s += '\nspecies_id  ' + ' '.join('%4d' %(s.id) for s in self.species)
+        s += '\nspawns_req  ' + ' '.join('%4d' %(s.spawns_required) for s in self.species)
+        s += '\nmembers_len ' + ' '.join('%4d' %(len(s.pool)) for s in self.species)
+        s += '\nage         ' + ' '.join('%4d' %(s.age) for s in self.species)
+        s += '\nnot_improved' + ' '.join('%4d' %(s.stagnation) for s in self.species)
+        s += '\nmax_fitness ' + ' '.join('%0.2f' %(s.max_fitness) for s in self.species)
+        s += '\navg_fitness ' + ' '.join('%0.2f' %(s.average_fitness) for s in self.species)
+        s += '\nleader      ' + ' '.join('%4d' %(s.best.id) for s in self.species)
+        s += '\npopulation_len %s  species_len %s  compatibility_threshold %0.2f' %(len(self.pool), len(self.species), Options.compatibility_threshold)
+        s += '\n'
+        return s

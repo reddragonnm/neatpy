@@ -20,7 +20,7 @@ class Species:
         self.stagnation += 1
         self.pool = []
 
-    def adjust_fitnesses(self):
+    def _adjust_fitnesses(self):
         total = 0
         for m in self.pool:
             fitness = m.fitness
