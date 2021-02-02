@@ -74,4 +74,3 @@ while p.best.fitness < max_fitness:
 
 best = p.best # best brain 
 ```
-### Enjoy 🥳
