@@ -76,6 +76,36 @@ class Brain:
                         )
                     )
 
+    def get_draw_info(self):
+        info = {
+            'nodes': {
+                'input': [],
+                'hidden': [],
+                'output': [],
+                'bias': []
+            },
+
+            'connections': {
+                'enabled': [],
+                'disabled': [], 
+            }
+        }
+
+        for node in self.nodes:
+            info['nodes'][node.state.value].append((node.x, node.y))
+
+        for conn in self.connections:
+            string = 'enabled' if conn.enabled else 'disabled'
+            info['connections'][string].append(
+                {
+                    'from': (self.get_node(conn.fr).x, self.get_node(conn.fr).y),
+                    'to': (self.get_node(conn.to).x, self.get_node(conn.to).y),
+                    'weight': conn.weight
+                }
+            )
+
+        return info
+
     def filter_nodes(self, *args):
         """Filters all nodes according to states which are taken as args
 

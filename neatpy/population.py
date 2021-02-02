@@ -16,12 +16,13 @@ class Population:
         self.next_genome_id = len(self.pool)
         self.next_species_id = 0   
 
-    def evaluate(self, eval_func, num_generations=float('inf')):
+    def evaluate(self, eval_func, num_generations=float('inf'), report=True):
         while True:
             eval_func(self.pool)
             self.epoch()
 
-            print(self)
+            if report:
+                print(self)
 
             if self.best.fitness > Options.fitness_threshold:
                 return self.best, True

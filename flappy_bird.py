@@ -1,10 +1,14 @@
 # importing all modules
 from neatpy.activations import clamped, tanh
+
 import pygame as pg  # simulation module
+from pygame.draw import *
+from pygame.color import THECOLORS as colors
 
 from neatpy.population import Population
 from neatpy.options import Options
 from neatpy.population import Population 
+from neatpy.draw import draw_brain_pygame
 
 from collections import deque  # deque is just a list with maximum size and removes old items automatically
 from random import randint  # just to set the pipe's y position
@@ -26,7 +30,7 @@ RED = 255, 0, 0
 GREEN = 0, 255, 0
 
 # defining the fps or the speed of the game (can be increased or decreased using up and down arrow keys)
-fps = 2**10
+fps = 20
 fps_clock = pg.time.Clock()
 
 # the bird class
@@ -247,6 +251,7 @@ class GameEnv:
 ##################
 env = GameEnv() ##
 ##################
+p = None
 
 def eval_genomes(nns):
     global fps
@@ -291,11 +296,15 @@ def eval_genomes(nns):
                 elif event.key == pg.K_DOWN:
                     fps /= 2
 
+        draw_brain_pygame(screen, p.best, 150, 10, 100, circle_size=8)
+
         # update the screen and respect the fps (just do everything according to the fps)
         pg.display.update()
         fps_clock.tick(fps)
 
 def main():
+    global p
+
     Options.set_options(4, 1, 200, 100000000, activation_func=tanh, target_species=10, excess_coeff=2, disjoint_coeff=2, weight_coeff=2, weight_mutate_prob=0.5)
 
     p = Population()
