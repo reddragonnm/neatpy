@@ -37,13 +37,13 @@ class InnovTable:
         InnovTable.node_id = max(InnovTable.node_id, node_id)
 
     @staticmethod
-    def create_innov(new_conn, fr, to):   
+    def _create_innov(fr, to, new_conn):   
         """Create a new innovation
 
         Args:
-            new_conn (bool): Is it a new connection. Other option is a node
             fr (int): Node ID of the input node
             to (int): Node ID of the output node
+            new_conn (bool): Is it a new connection. Other option is a node
 
         Returns:
             Innovation: The new innovation
@@ -76,4 +76,4 @@ class InnovTable:
             if innovation.new_conn == new_conn and innovation.fr == fr and innovation.to == to:
                 return innovation
 
-        return InnovTable.create_innov(new_conn, fr, to)
+        return InnovTable._create_innov(fr, to, new_conn)

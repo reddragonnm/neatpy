@@ -13,8 +13,8 @@ class Population:
         self.best = self.pool[0]
 
         self.gen = 0
-        self.next_genome_id = len(self.pool)
-        self.next_species_id = 0   
+        self.brain_id = len(self.pool)
+        self.species_id = 0   
 
     def evaluate(self, eval_func, num_generations=float('inf'), report=True):
         while True:
@@ -40,8 +40,8 @@ class Population:
                     break
 
             if not added:
-                self.species.append(Species(self.next_species_id, brain))
-                self.next_species_id += 1
+                self.species.append(Species(self.species_id, brain))
+                self.species_id += 1
 
         self.species = [sp for sp in self.species if len(sp.pool) > 0]
 
@@ -59,16 +59,16 @@ class Population:
                 new_pool.append(s.best)
 
             while len(new_pool) < s.spawns_required:                
-                brain1 = self.tournament_selection(s.pool)
+                brain1 = s.get_brain()
 
                 if random.random() < Options.crossover_rate:
-                    brain2 = self.tournament_selection(s.pool)
-                    child = self.crossover(brain1, brain2, self.next_genome_id)
-                    self.next_genome_id += 1
+                    brain2 = s.get_brain()
+                    child = self.crossover(brain1, brain2, self.brain_id)
+                    self.brain_id += 1
                 else:
                     child = copy.copy(brain1)
 
-                child._mutate()
+                child.mutate()
                 new_pool.append(child)
 
             new_pop.extend(new_pool)
@@ -77,9 +77,8 @@ class Population:
         self.pool = new_pop
 
         while len(self.pool) < Options.population_size:
-            genome = Brain(self.next_genome_id)
-            self.pool.append(genome)
-            self.next_genome_id += 1
+            self.pool.append(Brain(self.brain_id))
+            self.brain_id += 1
 
     def _sort_pool(self):
         self.pool.sort(key=lambda x: x.fitness, reverse=True)
@@ -91,8 +90,8 @@ class Population:
 
     def _adjust_fitnesses(self):
         for s in self.species:
-            s._make_leader()
-            s._adjust_fitnesses()
+            s.make_leader()
+            s.adjust_fitnesses()
 
     def _change_compatibility_threshold(self):
         if len(self.species) < Options.target_species:
@@ -108,7 +107,7 @@ class Population:
             if sp.stagnation > Options.dropoff_age or sp.spawns_required == 0:
                 continue
 
-            sp.pool = sp.pool[:max(1, round(len(sp.pool) * Options.survival_rate))]
+            sp.cull()
             new_species.append(sp)
 
         self.species = new_species
@@ -127,15 +126,6 @@ class Population:
         self._reproduce()        
 
         self.gen += 1
-
-    @staticmethod
-    def tournament_selection(genomes):
-        champion = genomes[0]
-        for _ in range(min(len(genomes), Options.tries_tournament_selection)):
-            g = random.choice(genomes)
-            if g.fitness > champion.fitness:
-                champion = g
-        return champion
 
     @staticmethod
     def crossover(mum, dad, baby_id=None):

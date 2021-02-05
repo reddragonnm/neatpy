@@ -1,4 +1,5 @@
 from .options import Options
+import random
 
 class Species:
     def __init__(self, species_id, member):
@@ -20,7 +21,19 @@ class Species:
         self.stagnation += 1
         self.pool = []
 
-    def _adjust_fitnesses(self):
+    def get_brain(self):
+        best = self.pool[0]
+        for _ in range(min(len(self.pool), Options.tries_tournament_selection)):
+            g = random.choice(self.pool)
+            if g.fitness > best.fitness:
+                best = g
+
+        return best
+
+    def cull(self):
+        self.pool = self.pool[:max(1, round(len(self.pool) * Options.survival_rate))]
+
+    def adjust_fitnesses(self):
         total = 0
         for m in self.pool:
             fitness = m.fitness
@@ -35,7 +48,7 @@ class Species:
 
         self.average_fitness = total
 
-    def _make_leader(self):
+    def make_leader(self):
         self.pool.sort(key=lambda x: x.fitness, reverse=True)
         self.best = self.pool[0]
 

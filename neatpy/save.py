@@ -4,7 +4,7 @@ from .connection import Connection
 from .node import Node, NodeState
 from .brain import Brain
 
-def save_node(node):
+def _save_node(node):
     return {
         'id': node.id,
         'state': node.state.value,
@@ -12,7 +12,7 @@ def save_node(node):
         'y': node.y
     }
 
-def save_conn(conn):
+def _save_conn(conn):
     return {
         'fr': conn.fr,
         'to': conn.to,
@@ -25,8 +25,8 @@ def save_brain(brain, file_name=None):
     data = json.dumps(
         {
             'id': brain.id,
-            'nodes': [save_node(node) for node in brain.nodes],
-            'connections': [save_conn(conn) for conn in brain.connections]
+            'nodes': [_save_node(node) for node in brain.nodes],
+            'connections': [_save_conn(conn) for conn in brain.connections]
         },
 
         indent=4
@@ -38,7 +38,7 @@ def save_brain(brain, file_name=None):
 
     return data
 
-def load_node(node):
+def _load_node(node):
     return Node(
         node['id'],
         NodeState(node['state']),
@@ -46,7 +46,7 @@ def load_node(node):
         node['y']
     )
 
-def load_conn(conn):
+def _load_conn(conn):
     return Connection(
         conn['fr'],
         conn['to'],
@@ -60,6 +60,6 @@ def load_brain(file_name):
 
     return Brain(
         data['id'],
-        [load_node(node) for node in data['nodes']],
-        [load_conn(conn) for conn in data['connections']],
+        [_load_node(node) for node in data['nodes']],
+        [_load_conn(conn) for conn in data['connections']],
     )

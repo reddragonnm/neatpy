@@ -220,7 +220,7 @@ class Brain:
                 )
             )
 
-    def _mutate(self):
+    def mutate(self):
         """Mutates the Brain according mutation rates defined in Options
         """
         if random.random() < Options.add_node_prob and len(self.nodes) < Options.max_nodes:
@@ -274,7 +274,12 @@ class Brain:
             if conn.fr == node1.id and conn.to == node2.id:
                 return False
 
-        return node1.id != node2.id and node1.state in [NodeState.input, NodeState.hidden, NodeState.bias] and node2.state in [NodeState.hidden, NodeState.output] and node1.y <= node2.y
+        return (
+            node1.id != node2.id and
+            node1.state in [NodeState.input, NodeState.hidden, NodeState.bias] and
+            node2.state in [NodeState.hidden, NodeState.output] and
+            node1.y <= node2.y
+        )
 
     def predict(self, inputs):
         """Predict the outputs based on the given inputs
@@ -299,13 +304,15 @@ class Brain:
                 if node.state == NodeState.input:
                     node.val = inputs[inp_num]
                     inp_num += 1
+
                 elif node.state == NodeState.bias:
                     node.val = 1
-                else:
-                    sum = 0
-                    for conn in self._get_input_connections(node.id):
-                        if conn.enabled: sum += conn.weight * self._get_node(conn.fr).val
 
-                    node.val = Options.activation_func(sum)
+                else:
+                    values = []
+                    for conn in self._get_input_connections(node.id):
+                        if conn.enabled: values.append(conn.weight * self._get_node(conn.fr).val)
+
+                    node.val = Options.activation_func(Options.aggregation_func(values))
 
         return [node.val for node in self.nodes if node.state == NodeState.output]

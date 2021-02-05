@@ -10,7 +10,9 @@ class Options:
 
         fitness_threshold=float('inf'),
         max_nodes=float('inf'),
+
         activation_func=sigmoid,
+        aggregation_func=sum,
 
         excess_coeff=1,
         disjoint_coeff=1,
@@ -51,6 +53,7 @@ class Options:
             fitness_threshold (float): Maximum fitness required before terminating
             max_nodes (int, optional): Maximum number of nodes in the Brain. Defaults to float('inf').
             activation_func (Callable[[float], float], optional): The activation function applied to every node. Defaults to sigmoid.
+            aggregation_func (Callable[[List[float]], float], optional): The aggregation of inputs in each node. Defaults to sum.
             excess_coeff (float, optional): Coefficient of the excess genes. Defaults to 1.
             disjoint_coeff (float, optional): Coefficient of the disjoint genes. Defaults to 1.
             weight_coeff (float, optional): Coefficient of the weight average. Defaults to 0.5.
@@ -77,10 +80,12 @@ class Options:
         Options.num_inputs = num_inputs
         Options.num_outputs = num_outputs
         Options.population_size = population_size
-        Options.fitness_threshold = fitness_threshold
 
+        Options.fitness_threshold = fitness_threshold
         Options.max_nodes = max_nodes
+
         Options.activation_func = activation_func
+        Options.aggregation_func = aggregation_func
 
         Options.excess_coeff = excess_coeff
         Options.disjoint_coeff = disjoint_coeff
