@@ -7,8 +7,8 @@ class Options:
         num_inputs,
         num_outputs,
         population_size,
-        fitness_threshold,
 
+        fitness_threshold=float('inf'),
         max_nodes=float('inf'),
         activation_func=sigmoid,
 

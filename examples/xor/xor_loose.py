@@ -1,7 +1,7 @@
 from neatpy.options import Options
 from neatpy.population import Population
 
-Options.set_options(2, 1, 150, 3.9)
+Options.set_options(2, 1, 150)
 p = Population()
 
 xor_inp = [(0,0), (0,1), (1,0), (1,1)]
