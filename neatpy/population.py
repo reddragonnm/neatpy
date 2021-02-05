@@ -68,7 +68,7 @@ class Population:
                 else:
                     child = copy.copy(brain1)
 
-                child.mutate()
+                child._mutate()
                 new_pool.append(child)
 
             new_pop.extend(new_pool)
@@ -201,15 +201,14 @@ class Population:
             if selected_gene is not None and selected_genome is not None:
                 baby_connections.append(copy.copy(selected_gene))
 
-                # inherit nodes
                 if not selected_gene.fr in node_ids:
-                    node = selected_genome.get_node(selected_gene.fr)
+                    node = selected_genome._get_node(selected_gene.fr)
                     if node != None:
                         baby_nodes.append(copy.copy(node))
                         node_ids.add(selected_gene.fr)
 
                 if not selected_gene.to in node_ids:
-                    node = selected_genome.get_node(selected_gene.to)
+                    node = selected_genome._get_node(selected_gene.to)
                     if node != None:
                         baby_nodes.append(copy.copy(node))
                         node_ids.add(selected_gene.to)

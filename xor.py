@@ -1,3 +1,4 @@
+from neatpy.brain import Brain
 from neatpy.options import Options
 from neatpy.population import Population
 
@@ -12,7 +13,7 @@ def evaluate(nns):
             output = nn.predict(xi)[0]
             nn.fitness -= (output - xo) ** 2
 
-Options.set_options(2, 1, 150, 3.9)
+Options.set_options(2, 1, 150, 3.9, weight_mutate_prob=0.5, add_node_prob=0.005, add_conn_prob=0.1)
 
 p = Population()
 best, solved = p.evaluate(evaluate, 400)

@@ -21,6 +21,10 @@ class Brain:
 
             nodes (List[Node]): List of nodes. If it is None then nodes are initialised
             connections (List[Connections]): List of connections. If nodes is None then connections are initialised
+
+        Methods:
+            get_draw_info: Get the information required to draw the neural network
+            predict: Predict the outputs based on the inputs
         """
 
         self.id = genome_id
@@ -55,8 +59,8 @@ class Brain:
         self.connections = []
 
         if Options.feature_selection:
-            inp = random.choice(self.filter_nodes(NodeState.input))
-            out = random.choice(self.filter_nodes(NodeState.output))
+            inp = random.choice(self._filter_nodes(NodeState.input))
+            out = random.choice(self._filter_nodes(NodeState.output))
 
             self.connections.append(
                 Connection(
@@ -66,8 +70,8 @@ class Brain:
                 )
             )
         else:
-            for node1 in self.filter_nodes(NodeState.bias, NodeState.input):
-                for node2 in self.filter_nodes(NodeState.output):
+            for node1 in self._filter_nodes(NodeState.bias, NodeState.input):
+                for node2 in self._filter_nodes(NodeState.output):
                     self.connections.append(
                         Connection(
                             node1.id,
@@ -77,6 +81,40 @@ class Brain:
                     )
 
     def get_draw_info(self):
+        """Can be used to get the info for drawing the neural network
+
+        Returns:
+            dict: The information for drawing
+
+            It returns a dict in the form of:
+
+            {
+                'nodes': {
+                    'input': [],
+                    'hidden': [],
+                    'output': [],
+                    'bias': []
+                },
+
+                'connections': {
+                    'enabled': [],
+                    'disabled': [], 
+                }
+            }
+
+            where each list in the 'nodes' dict contains the normalised x and y position of the node
+            Each list in the 'connections' dict contains dicts in the form of:
+
+            {
+                'from': (),
+                'to': (),
+                'weight': <int>
+            }
+
+            the 'from' and 'to' keys in the dict contains the normalised x and y positions of the nodes
+            the 'weight' contains the weight of the node for color coding the connections
+        }
+        """
         info = {
             'nodes': {
                 'input': [],
@@ -98,15 +136,15 @@ class Brain:
             string = 'enabled' if conn.enabled else 'disabled'
             info['connections'][string].append(
                 {
-                    'from': (self.get_node(conn.fr).x, self.get_node(conn.fr).y),
-                    'to': (self.get_node(conn.to).x, self.get_node(conn.to).y),
+                    'from': (self._get_node(conn.fr).x, self._get_node(conn.fr).y),
+                    'to': (self._get_node(conn.to).x, self._get_node(conn.to).y),
                     'weight': conn.weight
                 }
             )
 
         return info
 
-    def filter_nodes(self, *args):
+    def _filter_nodes(self, *args):
         """Filters all nodes according to states which are taken as args
 
         Returns:
@@ -114,14 +152,14 @@ class Brain:
         """
         return [node for node in self.nodes if node.state in args]
 
-    def add_conn(self):
+    def _add_conn(self):
         """Adds a new connection between 2 nodes
         """
         valid = []
 
         for node1 in self.nodes:
             for node2 in self.nodes:
-                if self.valid_conn(node1, node2):
+                if self._valid_conn(node1, node2):
                     valid.append((node1.id, node2.id))
 
         if valid:
@@ -135,25 +173,25 @@ class Brain:
                 )
             )
 
-    def add_node(self):
+    def _add_node(self):
         """Adds a new node by splitting a connection
         """
-        valid = [conn for conn in self.connections if conn.enabled and self.get_node(conn.fr).state != NodeState.bias]
+        valid = [conn for conn in self.connections if conn.enabled and self._get_node(conn.fr).state != NodeState.bias]
 
         if valid:
             conn = random.choice(valid)
         else:
             return
 
-        fr = self.get_node(conn.fr)
-        to = self.get_node(conn.to)
+        fr = self._get_node(conn.fr)
+        to = self._get_node(conn.to)
 
         x = (fr.x + to.x) / 2
         y = (fr.y + to.y) / 2
 
         node_id = InnovTable.get_innov(conn.fr, conn.to, False).node_id
 
-        if self.get_node(node_id) is None:
+        if self._get_node(node_id) is None:
             conn.enabled = False
 
             self.nodes.append(
@@ -182,14 +220,14 @@ class Brain:
                 )
             )
 
-    def mutate(self):
+    def _mutate(self):
         """Mutates the Brain according mutation rates defined in Options
         """
         if random.random() < Options.add_node_prob and len(self.nodes) < Options.max_nodes:
-            self.add_node()
+            self._add_node()
 
         if random.random() < Options.add_conn_prob:
-            self.add_conn()
+            self._add_conn()
 
         for conn in self.connections:
             if random.random() < Options.weight_mutate_prob:
@@ -198,7 +236,7 @@ class Brain:
                 else:
                     conn.weight += random.uniform(-1, 1) * Options.weight_mutate_power
 
-    def get_input_connections(self, node_id):
+    def _get_input_connections(self, node_id):
         """Returns all connections where the connection leads to a node with given node_id
 
         Args:
@@ -209,7 +247,7 @@ class Brain:
         """
         return [conn for conn in self.connections if conn.to == node_id]
 
-    def get_node(self, node_id):
+    def _get_node(self, node_id):
         """Returns node with given node_id in self.nodes
 
         Args:
@@ -222,7 +260,7 @@ class Brain:
             if node.id == node_id:
                 return node
 
-    def valid_conn(self, node1, node2):
+    def _valid_conn(self, node1, node2):
         """Checks if the connection between the given nodes is possible
 
         Args:
@@ -265,8 +303,8 @@ class Brain:
                     node.val = 1
                 else:
                     sum = 0
-                    for conn in self.get_input_connections(node.id):
-                        if conn.enabled: sum += conn.weight * self.get_node(conn.fr).val
+                    for conn in self._get_input_connections(node.id):
+                        if conn.enabled: sum += conn.weight * self._get_node(conn.fr).val
 
                     node.val = Options.activation_func(sum)
 

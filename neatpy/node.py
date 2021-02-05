@@ -29,5 +29,4 @@ class Node:
         self.y = y
 
         self.val = 0
-
         

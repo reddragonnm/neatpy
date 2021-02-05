@@ -16,7 +16,7 @@ from random import randint  # just to set the pipe's y position
 pg.init()
 pg.font.init()
 
-draw_lines = False
+draw_lines = True
 
 screen_width, screen_height = 400, 600
 screen = pg.display.set_mode((screen_width, screen_height))
@@ -305,7 +305,7 @@ def eval_genomes(nns):
 def main():
     global p
 
-    Options.set_options(4, 1, 200, 100000000, activation_func=tanh, target_species=10, excess_coeff=2, disjoint_coeff=2, weight_coeff=2, weight_mutate_prob=0.5)
+    Options.set_options(4, 1, 500, 100000000, activation_func=tanh, target_species=20, excess_coeff=2, disjoint_coeff=2, weight_coeff=2, weight_mutate_prob=0.5)
 
     p = Population()
     p.evaluate(eval_genomes, 1000000)
