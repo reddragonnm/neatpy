@@ -220,7 +220,6 @@ class Population:
         s += '\nBest id %s fitness %0.5f neurons %s links %s' % (b.id, b.fitness, len(b.nodes), len(b.connections))
         s += '\nspecies_id  ' + ' '.join('%4d' %(s.id) for s in self.species)
         s += '\nspawns_req  ' + ' '.join('%4d' %(s.spawns_required) for s in self.species)
-        s += '\nmembers_len ' + ' '.join('%4d' %(len(s.pool)) for s in self.species)
         s += '\nage         ' + ' '.join('%4d' %(s.age) for s in self.species)
         s += '\nnot_improved' + ' '.join('%4d' %(s.stagnation) for s in self.species)
         s += '\nmax_fitness ' + ' '.join('%0.2f' %(s.max_fitness) for s in self.species)

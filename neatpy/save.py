@@ -1,7 +1,6 @@
 import json
 
-from .connection import Connection
-from .node import Node, NodeState
+from .genes import Connection, Node, NodeState
 from .brain import Brain
 
 def _save_node(node):

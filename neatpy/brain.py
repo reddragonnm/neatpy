@@ -1,8 +1,7 @@
 import random
 
 from .innovation import InnovTable
-from .node import NodeState, Node
-from .connection import Connection
+from .genes import NodeState, Node, Connection
 
 from .options import Options
 

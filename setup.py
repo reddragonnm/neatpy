@@ -4,7 +4,7 @@ LONG_DESCRIPTION = open('README.md').read()
 
 setup(
     name='neatpy',
-    version='0.4.0',
+    version='0.5.0',
 
     packages=find_packages(),
     
