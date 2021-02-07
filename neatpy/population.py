@@ -14,7 +14,7 @@ class Population:
 
         self.gen = 0
         self.brain_id = len(self.pool)
-        self.species_id = 0   
+        self.species_id = 0 
 
     def evaluate(self, eval_func, num_generations=float('inf'), report=True):
         while True:
@@ -51,7 +51,7 @@ class Population:
             sp.spawns_required = Options.population_size * sp.average_fitness / total
 
     def _reproduce(self):
-        new_pop = []
+        self.pool = []
         for s in self.species:
             new_pool = []
 
@@ -71,10 +71,8 @@ class Population:
                 child.mutate()
                 new_pool.append(child)
 
-            new_pop.extend(new_pool)
+            self.pool.extend(new_pool)
             s.purge()
-
-        self.pool = new_pop
 
         while len(self.pool) < Options.population_size:
             self.pool.append(Brain(self.brain_id))
