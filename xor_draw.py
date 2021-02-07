@@ -1,6 +1,6 @@
 from neatpy.options import Options
 from neatpy.population import Population
-from neatpy.draw import draw_brain_pygame, draw_species_bar_pygame
+from neatpy.draw import draw_brain_pygame
 
 import pygame as pg
 from pygame.color import THECOLORS as colors
@@ -27,10 +27,9 @@ while p.best.fitness < max_fitness:
             output = nn.predict(xi)[0]
             nn.fitness -= (output - xo) ** 2
 
-    draw_brain_pygame(screen, p.best, dim=250, x=75, y=40)
+    draw_brain_pygame(screen, p.best, dim=250, x=75, y=40, circle_size=20, line_width=7, node_border_thickness=3)
 
     p.epoch()
-
     print(p)
 
     for event in pg.event.get():
