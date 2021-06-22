@@ -1,13 +1,14 @@
 from .options import Options
 import random
 
+
 class Species:
     def __init__(self, species_id, member):
         self.best = member
-        
+
         self.pool = [member]
         self.id = species_id
-        
+
         self.age = 0
         self.stagnation = 0
 
@@ -19,7 +20,7 @@ class Species:
     def purge(self):
         self.age += 1
         self.stagnation += 1
-        self.pool = []
+        self.pool[:] = []
 
     def get_brain(self):
         best = self.pool[0]
@@ -31,7 +32,8 @@ class Species:
         return best
 
     def cull(self):
-        self.pool = self.pool[:max(1, round(len(self.pool) * Options.survival_rate))]
+        self.pool[:] = self.pool[:max(
+            1, round(len(self.pool) * Options.survival_rate))]
 
     def adjust_fitnesses(self):
         total = 0
@@ -54,7 +56,7 @@ class Species:
 
         if self.best.fitness > self.max_fitness:
             self.stagnation = 0
-        self.max_fitness = self.best.fitness
+            self.max_fitness = self.best.fitness
 
     @staticmethod
     def compat_dist(genome1, genome2):
@@ -85,7 +87,7 @@ class Species:
                 n_match += 1
                 i_g1 += 1
                 i_g2 += 1
-                weight_difference = weight_difference + abs(conn1.weight-conn2.weight)
+                weight_difference += abs(conn1.weight-conn2.weight)
                 continue
 
             # disjoint
@@ -98,7 +100,7 @@ class Species:
                 n_disjoint += 1
                 i_g2 += 1
                 continue
-            
+
         n_match += 1
         return (Options.excess_coeff * n_excess + Options.disjoint_coeff * n_disjoint) / max(n_g1, n_g2) + Options.weight_coeff * weight_difference / n_match
 

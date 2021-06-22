@@ -1,9 +1,11 @@
 import random
+import copy
 
 from .innovation import InnovTable
 from .genes import NodeState, Node, Connection
 
 from .options import Options
+
 
 class Brain:
     def __init__(self, genome_id, nodes=None, connections=None):
@@ -32,34 +34,40 @@ class Brain:
         self.nodes = nodes
         self.connections = connections
 
-        if nodes is not None:            
+        if nodes is not None:
             self.nodes.sort(key=lambda x: x.id)
             return
 
-        input_pos_x = 1./(Options.num_inputs+1)
-        output_pos_x = 1./(Options.num_outputs)
+        input_pos_x = 1/(Options.num_inputs+1)
+        output_pos_x = 1/(Options.num_outputs)
         node_id = 0
-        
+
         self.nodes = []
 
-        self.nodes.append(Node(node_id, NodeState.bias, 0.5*input_pos_x, 0.0))
+        bias_nodes = []
+        input_nodes = []
+        output_nodes = []
+
+        bias_nodes.append(Node(node_id, NodeState.bias, 0.5*input_pos_x, 0.0))
         node_id += 1
 
         for i in range(Options.num_inputs):
-            self.nodes.append(Node(node_id, NodeState.input, (i+1+0.5)*input_pos_x, 0.0))
+            input_nodes.append(
+                Node(node_id, NodeState.input, (i+1.5)*input_pos_x, 0.0))
             node_id += 1
 
         for i in range(Options.num_outputs):
-            self.nodes.append(Node(node_id, NodeState.output, (i+0.5)*output_pos_x, 1.0))
+            output_nodes.append(Node(node_id, NodeState.output,
+                                     (i+0.5)*output_pos_x, 1.0))
             node_id += 1
 
+        self.nodes = bias_nodes + input_nodes + output_nodes
         InnovTable.set_node_id(node_id)
-
         self.connections = []
 
         if Options.feature_selection:
-            inp = random.choice(self._filter_nodes(NodeState.input))
-            out = random.choice(self._filter_nodes(NodeState.output))
+            inp = random.choice(input_nodes + bias_nodes)
+            out = random.choice(output_nodes)
 
             self.connections.append(
                 Connection(
@@ -69,8 +77,8 @@ class Brain:
                 )
             )
         else:
-            for node1 in self._filter_nodes(NodeState.bias, NodeState.input):
-                for node2 in self._filter_nodes(NodeState.output):
+            for node1 in input_nodes + bias_nodes:
+                for node2 in output_nodes:
                     self.connections.append(
                         Connection(
                             node1.id,
@@ -124,7 +132,7 @@ class Brain:
 
             'connections': {
                 'enabled': [],
-                'disabled': [], 
+                'disabled': [],
             }
         }
 
@@ -175,7 +183,8 @@ class Brain:
     def _add_node(self):
         """Adds a new node by splitting a connection
         """
-        valid = [conn for conn in self.connections if conn.enabled and self._get_node(conn.fr).state != NodeState.bias]
+        valid = [
+            conn for conn in self.connections if conn.enabled and conn.fr != 0]
 
         if valid:
             conn = random.choice(valid)
@@ -189,35 +198,33 @@ class Brain:
         y = (fr.y + to.y) / 2
 
         node_id = InnovTable.get_innov(conn.fr, conn.to, False).node_id
+        conn.enabled = False
 
-        if self._get_node(node_id) is None:
-            conn.enabled = False
-
-            self.nodes.append(
-                Node(
-                    node_id,
-                    NodeState.hidden,
-                    x, y
-                )
+        self.nodes.append(
+            Node(
+                node_id,
+                NodeState.hidden,
+                x, y
             )
+        )
 
-            self.connections.append(
-                Connection(
-                    conn.fr,
-                    node_id,
-                    InnovTable.get_innov(conn.fr, node_id).innov,
-                    weight=1
-                )
+        self.connections.append(
+            Connection(
+                conn.fr,
+                node_id,
+                InnovTable.get_innov(conn.fr, node_id).innov,
+                weight=1
             )
+        )
 
-            self.connections.append(
-                Connection(
-                    node_id,
-                    conn.to,
-                    InnovTable.get_innov(node_id, conn.to).innov,
-                    weight=conn.weight
-                )
+        self.connections.append(
+            Connection(
+                node_id,
+                conn.to,
+                InnovTable.get_innov(node_id, conn.to).innov,
+                weight=conn.weight
             )
+        )
 
     def mutate(self):
         """Mutates the Brain according mutation rates defined in Options
@@ -231,9 +238,11 @@ class Brain:
         for conn in self.connections:
             if random.random() < Options.weight_mutate_prob:
                 if random.random() < Options.new_weight_prob:
-                    conn.weight = random.uniform(-1, 1) * Options.weight_init_range
+                    conn.weight = random.uniform(-1, 1) * \
+                        Options.weight_init_range
                 else:
-                    conn.weight += random.uniform(-1, 1) * Options.weight_mutate_power
+                    conn.weight += random.uniform(-1, 1) * \
+                        Options.weight_mutate_power
 
     def _get_input_connections(self, node_id):
         """Returns all connections where the connection leads to a node with given node_id
@@ -310,8 +319,93 @@ class Brain:
                 else:
                     values = []
                     for conn in self._get_input_connections(node.id):
-                        if conn.enabled: values.append(conn.weight * self._get_node(conn.fr).val)
+                        if conn.enabled:
+                            values.append(
+                                conn.weight * self._get_node(conn.fr).val)
 
-                    node.val = Options.activation_func(Options.aggregation_func(values))
+                    node.val = Options.activation_func(
+                        Options.aggregation_func(values))
 
         return [node.val for node in self.nodes if node.state == NodeState.output]
+
+    @staticmethod
+    def crossover(mum, dad, baby_id=None):
+        n_mum = len(mum.connections)
+        n_dad = len(dad.connections)
+
+        if mum.fitness == dad.fitness:
+            if n_mum == n_dad:
+                better = random.choice([mum, dad])
+            elif n_mum < n_dad:
+                better = mum
+            else:
+                better = dad
+        elif mum.fitness > dad.fitness:
+            better = mum
+        else:
+            better = dad
+
+        baby_nodes = []
+        baby_connections = []
+
+        i_mum = i_dad = 0
+        node_ids = set()
+
+        while i_mum < n_mum or i_dad < n_dad:
+            mum_gene = mum.connections[i_mum] if i_mum < n_mum else None
+            dad_gene = dad.connections[i_dad] if i_dad < n_dad else None
+
+            selected_gene = None
+            selected_genome = None
+
+            if mum_gene and dad_gene:
+                if mum_gene.innov == dad_gene.innov:
+                    selected_gene, selected_genome = random.choice(
+                        [(mum_gene, mum), (dad_gene, dad)])
+
+                    i_mum += 1
+                    i_dad += 1
+
+                elif dad_gene.innov < mum_gene.innov:
+                    if better == dad:
+                        selected_gene = dad.connections[i_dad]
+                        selected_genome = dad
+                    i_dad += 1
+
+                elif mum_gene.innov < dad_gene.innov:
+                    if better == mum:
+                        selected_gene = mum_gene
+                        selected_genome = mum
+                    i_mum += 1
+
+            elif mum_gene == None and dad_gene:
+                if better == dad:
+                    selected_gene = dad.connections[i_dad]
+                    selected_genome = dad
+                i_dad += 1
+
+            elif mum_gene and dad_gene == None:
+                if better == mum:
+                    selected_gene = mum_gene
+                    selected_genome = mum
+                i_mum += 1
+
+            if selected_gene is not None and selected_genome is not None:
+                baby_connections.append(copy.copy(selected_gene))
+
+                if not selected_gene.fr in node_ids:
+                    node = selected_genome._get_node(selected_gene.fr)
+                    if node != None:
+                        baby_nodes.append(copy.copy(node))
+                        node_ids.add(selected_gene.fr)
+
+                if not selected_gene.to in node_ids:
+                    node = selected_genome._get_node(selected_gene.to)
+                    if node != None:
+                        baby_nodes.append(copy.copy(node))
+                        node_ids.add(selected_gene.to)
+
+        if True not in [l.enabled for l in baby_connections]:
+            random.choice(baby_connections).enabled = True
+
+        return Brain(baby_id, baby_nodes, baby_connections)

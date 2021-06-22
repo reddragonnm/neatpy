@@ -1,6 +1,9 @@
 import random
 import enum
 
+from .options import Options
+
+
 class NodeState(enum.Enum):
     """Enum of all possible node states
     - input
@@ -12,6 +15,7 @@ class NodeState(enum.Enum):
     hidden = 'hidden'
     output = 'output'
     bias = 'bias'
+
 
 class Node:
     def __init__(self, node_id, state, x, y):
@@ -31,6 +35,7 @@ class Node:
 
         self.val = 0
 
+
 class Connection:
     def __init__(self, fr, to, innov, weight=None):
         """Connection gene
@@ -45,6 +50,8 @@ class Connection:
         self.fr = fr
         self.to = to
 
-        self.weight = weight or random.uniform(-1, 1)
+        self.weight = weight or random.uniform(-1, 1) * \
+            Options.weight_init_range
+
         self.enabled = True
         self.innov = innov
