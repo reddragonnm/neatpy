@@ -1,15 +1,8 @@
-# testing the second architecture
-
 import math
 import random
 import enum
 import copy
 
-import pygame as pg
-from pygame.draw import circle, line
-from pygame.color import THECOLORS as colors
-
-# get same results every time
 random.seed(10)
 
 
@@ -75,7 +68,6 @@ class Options:
         activation_func=sigmoid,
         aggregation_func=sum,
 
-        excess_coeff=1,
         disjoint_coeff=1,
         weight_coeff=0.5,
 
@@ -106,7 +98,6 @@ class Options:
         Options.activation_func = activation_func
         Options.aggregation_func = aggregation_func
 
-        Options.excess_coeff = excess_coeff
         Options.disjoint_coeff = disjoint_coeff
         Options.weight_coeff = weight_coeff
 
@@ -449,6 +440,27 @@ class Brain:
 
         return Brain(baby_id, nodes, connections)
 
+    @staticmethod
+    def distance(a, b):
+        l1 = set([c.innov for c in a.connections])
+        l2 = set([c.innov for c in b.connections])
+
+        match = l1 & l2
+        weight_diff = 0
+
+        w1 = {c.innov: c.weight for c in a.connections}
+        w2 = {c.innov: c.weight for c in b.connections}
+
+        for m in match:
+            weight_diff += abs(w1[m] - w2[m])
+
+        n_match = len(match)
+        n_disjoint = len(l1 ^ l2)
+
+        return (Options.disjoint_coeff * n_disjoint) / \
+            max(len(l1), len(l2)) + Options.weight_coeff * \
+            weight_diff / n_match
+
 
 class Species:
     def __init__(self, species_id, member):
@@ -493,54 +505,8 @@ class Species:
             self.best = self.pool[0]
             self.stagnation = 0
 
-    @staticmethod
-    def compat_dist(genome1, genome2):
-        n_match = n_disjoint = n_excess = 0
-        weight_difference = 0
-
-        n_g1 = len(genome1.connections)
-        n_g2 = len(genome2.connections)
-        i_g1 = i_g2 = 0
-
-        while i_g1 < n_g1 or i_g2 < n_g2:
-            # excess
-            if i_g1 == n_g1:
-                n_excess += 1
-                i_g2 += 1
-                continue
-
-            if i_g2 == n_g2:
-                n_excess += 1
-                i_g1 += 1
-                continue
-
-            conn1 = genome1.connections[i_g1]
-            conn2 = genome2.connections[i_g2]
-
-            # match
-            if conn1.innov == conn2.innov:
-                n_match += 1
-                i_g1 += 1
-                i_g2 += 1
-                weight_difference += abs(conn1.weight-conn2.weight)
-                continue
-
-            # disjoint
-            if conn1.innov < conn2.innov:
-                n_disjoint += 1
-                i_g1 += 1
-                continue
-
-            if conn1.innov > conn2.innov:
-                n_disjoint += 1
-                i_g2 += 1
-                continue
-
-        n_match += 1
-        return (Options.excess_coeff * n_excess + Options.disjoint_coeff * n_disjoint) / max(n_g1, n_g2) + Options.weight_coeff * weight_difference / n_match
-
     def same_species(self, brain):
-        return Species.compat_dist(brain, self.best) <= Options.compatibility_threshold
+        return Brain.distance(brain, self.best) <= Options.compatibility_threshold
 
 
 class Population:
@@ -670,75 +636,11 @@ def evaluate(nns):
             nn.fitness -= (output - xo) ** 2
 
 
-def draw_brain_pygame(screen, brain, x=50, y=50, dim=300, circle_size=15, line_width=4, node_border_thickness=1):
-    info = brain.get_draw_info()
-
-    for conn in info['connections']['enabled']:
-        line(
-            screen,
-            colors['dodgerblue'] if conn['weight'] > 0 else colors['coral'],
-            (int(dim * conn['from'][1] + x), int(dim * conn['from'][0] + y)),
-            (int(dim * conn['to'][1] + x), int(dim * conn['to'][0] + y)),
-            line_width
-        )
-
-    for inp in info['nodes']['input']:
-        circle(screen, colors['white'], (int(
-            dim * inp[1] + x), int(dim * inp[0] + y)), circle_size)
-        circle(screen, colors['black'], (int(
-            dim * inp[1] + x), int(dim * inp[0] + y)), circle_size, node_border_thickness)
-
-    for inp in info['nodes']['bias']:
-        circle(screen, colors['white'], (int(
-            dim * inp[1] + x), int(dim * inp[0] + y)), circle_size)
-        circle(screen, colors['black'], (int(
-            dim * inp[1] + x), int(dim * inp[0] + y)), circle_size, node_border_thickness)
-
-    for inp in info['nodes']['hidden']:
-        circle(screen, colors['white'], (int(
-            dim * inp[1] + x), int(dim * inp[0] + y)), circle_size)
-        circle(screen, colors['black'], (int(
-            dim * inp[1] + x), int(dim * inp[0] + y)), circle_size, node_border_thickness)
-
-    for inp in info['nodes']['output']:
-        circle(screen, colors['white'], (int(
-            dim * inp[1] + x), int(dim * inp[0] + y)), circle_size)
-        circle(screen, colors['black'], (int(
-            dim * inp[1] + x), int(dim * inp[0] + y)), circle_size, node_border_thickness)
-
-
 if __name__ == '__main__':
-    pg.init()
-    screen = pg.display.set_mode((400, 400))
-
     xor_inp = [(0, 0), (0, 1), (1, 0), (1, 1)]
     xor_out = [0, 1, 1, 0]
 
-    Options.set_options(2, 1, 150, 3.9, weight_mutate_prob=0.5,
-                        add_node_prob=0.005, add_conn_prob=0.1, feature_selection=False)
-
+    Options.set_options(2, 1, 150, 3.9)
     p = Population()
-    # best, solved = p.evaluate(evaluate, 400)
 
-    while p.best.fitness < 3.9:
-        screen.fill(colors['lightgreen'])
-
-        for nn in p.pool:
-            nn.fitness = 4
-
-            for xi, xo in zip(xor_inp, xor_out):
-                output = nn.predict(xi)[0]
-                nn.fitness -= (output - xo) ** 2
-
-        draw_brain_pygame(screen, p.best, dim=250, x=75,
-                          y=40, circle_size=20, line_width=7)
-
-        p.epoch()
-        print(p)
-
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                pg.quit()
-                quit()
-
-        pg.display.update()
+    p.evaluate(evaluate)
