@@ -7,6 +7,8 @@ import pygame as pg
 from pygame.draw import circle, line
 from pygame.color import THECOLORS as colors
 
+random.seed(10)
+
 
 def sigmoid(x):
     try:
@@ -709,8 +711,8 @@ if __name__ == '__main__':
     xor_inp = [(0, 0), (0, 1), (1, 0), (1, 1)]
     xor_out = [0, 1, 1, 0]
 
-    # Options.set_options(2, 1, 150, 3.9, weight_mutate_prob=0.5,
-    #                     add_node_prob=0.005, add_conn_prob=0.1)
+    Options.set_options(2, 1, 150, 3.9, weight_mutate_prob=0.5,
+                        add_node_prob=0.005, add_conn_prob=0.1)
 
     # p = Population()
     # # best, solved = p.evaluate(evaluate, 400)
@@ -738,7 +740,6 @@ if __name__ == '__main__':
 
     #     pg.display.update()
 
-    Options.set_options(2, 1, 150, 3.9)
     p = Population()
 
     p.evaluate(evaluate)
