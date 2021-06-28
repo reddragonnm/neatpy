@@ -198,36 +198,6 @@ class Brain:
                     )
                 )
 
-    def get_draw_info(self):
-        info = {
-            'nodes': {
-                'input': [],
-                'hidden': [],
-                'output': [],
-                'bias': []
-            },
-
-            'connections': {
-                'enabled': [],
-                'disabled': [],
-            }
-        }
-
-        for node in self.nodes:
-            info['nodes'][node.state.value].append((node.x, node.y))
-
-        for conn in self.connections:
-            string = 'enabled' if conn.enabled else 'disabled'
-            info['connections'][string].append(
-                {
-                    'from': (self.get_node(conn.fr).x, self.get_node(conn.fr).y),
-                    'to': (self.get_node(conn.to).x, self.get_node(conn.to).y),
-                    'weight': conn.weight
-                }
-            )
-
-        return info
-
     def add_conn(self):
         valid = []
 
@@ -363,17 +333,7 @@ class Brain:
         n1 = len(a.connections)
         n2 = len(b.connections)
 
-        if a.fitness == b.fitness:
-            if n1 == n2:
-                better = random.choice([a, b])
-            elif n1 < n2:
-                better = a
-            else:
-                better = b
-        elif a.fitness > b.fitness:
-            better = a
-        else:
-            better = b
+        better = max(a, b, key=lambda x: x.fitness)
 
         nodes = []
         connections = []
@@ -445,17 +405,16 @@ class Brain:
         l1 = set([c.innov for c in a.connections])
         l2 = set([c.innov for c in b.connections])
 
-        match = l1 & l2
+        n_match = 0
+        n_disjoint = len(l1 ^ l2)
         weight_diff = 0
 
         w1 = {c.innov: c.weight for c in a.connections}
         w2 = {c.innov: c.weight for c in b.connections}
 
-        for m in match:
+        for m in l1 & l2:
+            n_match += 1
             weight_diff += abs(w1[m] - w2[m])
-
-        n_match = len(match)
-        n_disjoint = len(l1 ^ l2)
 
         return (Options.disjoint_coeff * n_disjoint) / \
             max(len(l1), len(l2)) + Options.weight_coeff * \
