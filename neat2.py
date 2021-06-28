@@ -134,8 +134,6 @@ class Node:
         self.x = x
         self.y = y
 
-        self.val = 0
-
 
 class Connection:
     def __init__(self, fr, to, innov, weight=None):
@@ -300,33 +298,34 @@ class Brain:
     def predict(self, inputs):
         assert len(inputs) == Options.num_inputs
 
-        depth = len(set([nn.y for nn in self.nodes]))
+        depth = len(set(nn.y for nn in self.nodes))
+        val_dict = {}
 
         for node in self.nodes:
-            node.val = 0
+            val_dict[node.id] = 0
 
         for _ in range(depth):
             inp_num = 0
 
             for node in self.nodes:
                 if node.state == NodeState.input:
-                    node.val = inputs[inp_num]
+                    val_dict[node.id] = inputs[inp_num]
                     inp_num += 1
 
                 elif node.state == NodeState.bias:
-                    node.val = 1
+                    val_dict[node.id] = 1
 
                 else:
                     values = []
                     for conn in self.get_input_connections(node.id):
                         if conn.enabled:
                             values.append(
-                                conn.weight * self.get_node(conn.fr).val)
+                                conn.weight * val_dict[conn.fr])
 
-                    node.val = Options.activation_func(
+                    val_dict[node.id] = Options.activation_func(
                         Options.aggregation_func(values))
 
-        return [node.val for node in self.nodes if node.state == NodeState.output]
+        return [val_dict[node.id] for node in self.nodes if node.state == NodeState.output]
 
     @staticmethod
     def crossover(a, b, baby_id=None):
