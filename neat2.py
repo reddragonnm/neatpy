@@ -127,11 +127,10 @@ class NodeState(enum.Enum):
 
 
 class Node:
-    def __init__(self, node_id, x, y):
-        self.id = node_id
+    pos = {}
 
-        self.x = x
-        self.y = y
+    def __init__(self, node_id):
+        self.id = node_id
 
     @staticmethod
     def get_state(node_id):
@@ -179,17 +178,18 @@ class Brain:
         input_nodes = []
         output_nodes = []
 
-        bias_nodes.append(Node(node_id, 0.5*input_pos_x, 0.0))
+        bias_nodes.append(Node(node_id))
+        Node.pos[node_id] = 0.5*input_pos_x, 0
         node_id += 1
 
         for i in range(Options.num_inputs):
-            input_nodes.append(
-                Node(node_id, (i+1.5)*input_pos_x, 0.0))
+            input_nodes.append(Node(node_id))
+            Node.pos[node_id] = (i+1.5)*input_pos_x, 0
             node_id += 1
 
         for i in range(Options.num_outputs):
-            output_nodes.append(Node(node_id,
-                                     (i+0.5)*output_pos_x, 1.0))
+            output_nodes.append(Node(node_id))
+            Node.pos[node_id] = (i+0.5)*output_pos_x, 1
             node_id += 1
 
         self.nodes = bias_nodes + input_nodes + output_nodes
@@ -234,11 +234,8 @@ class Brain:
         else:
             return
 
-        fr = self.get_node(conn.fr)
-        to = self.get_node(conn.to)
-
-        x = (fr.x + to.x) / 2
-        y = (fr.y + to.y) / 2
+        x = (Node.pos[conn.fr][0] + Node.pos[conn.to][0]) / 2
+        y = (Node.pos[conn.fr][1] + Node.pos[conn.to][1]) / 2
 
         node_id = InnovTable.get_innov(conn.fr, conn.to, False).node_id
         conn.enabled = False
@@ -246,9 +243,9 @@ class Brain:
         self.nodes.append(
             Node(
                 node_id,
-                x, y
             )
         )
+        Node.pos[node_id] = x, y
 
         self.connections.append(
             Connection(
@@ -301,13 +298,13 @@ class Brain:
             node1.id != node2.id and
             Node.get_state(node1.id) in [NodeState.input, NodeState.hidden, NodeState.bias] and
             Node.get_state(node2.id) in [NodeState.hidden, NodeState.output] and
-            node1.y <= node2.y
+            Node.pos[node1.id][1] <= Node.pos[node2.id][1]
         )
 
     def predict(self, inputs):
         assert len(inputs) == Options.num_inputs
 
-        depth = len(set(nn.y for nn in self.nodes))
+        depth = len(set(Node.pos[nn.id][1] for nn in self.nodes))
         val_dict = {}
 
         for node in self.nodes:
