@@ -338,7 +338,17 @@ class Brain:
         n1 = len(a.connections)
         n2 = len(b.connections)
 
-        better = max(a, b, key=lambda x: x.fitness)
+        if a.fitness == b.fitness:
+            if n1 == n2:
+                better = random.choice([a, b])
+            elif n1 < n2:
+                better = a
+            else:
+                better = b
+        elif a.fitness > b.fitness:
+            better = a
+        else:
+            better = b
 
         nodes = []
         connections = []
@@ -406,24 +416,42 @@ class Brain:
         return Brain(baby_id, nodes, connections)
 
     @staticmethod
-    def distance(a, b):
-        l1 = set([c.innov for c in a.connections])
-        l2 = set([c.innov for c in b.connections])
-
-        n_match = 0
-        n_disjoint = len(l1 ^ l2)
-        weight_diff = 0
-
-        w1 = {c.innov: c.weight for c in a.connections}
-        w2 = {c.innov: c.weight for c in b.connections}
-
-        for m in l1 & l2:
-            n_match += 1
-            weight_diff += abs(w1[m] - w2[m])
-
-        return (Options.disjoint_coeff * n_disjoint) / \
-            max(len(l1), len(l2)) + Options.weight_coeff * \
-            weight_diff / n_match
+    def compat_dist(genome1, genome2):
+        n_match = n_disjoint = n_excess = 0
+        weight_difference = 0
+        n_g1 = len(genome1.connections)
+        n_g2 = len(genome2.connections)
+        i_g1 = i_g2 = 0
+        while i_g1 < n_g1 or i_g2 < n_g2:
+            # excess
+            if i_g1 == n_g1:
+                n_excess += 1
+                i_g2 += 1
+                continue
+            if i_g2 == n_g2:
+                n_excess += 1
+                i_g1 += 1
+                continue
+            conn1 = genome1.connections[i_g1]
+            conn2 = genome2.connections[i_g2]
+            # match
+            if conn1.innov == conn2.innov:
+                n_match += 1
+                i_g1 += 1
+                i_g2 += 1
+                weight_difference += abs(conn1.weight-conn2.weight)
+                continue
+            # disjoint
+            if conn1.innov < conn2.innov:
+                n_disjoint += 1
+                i_g1 += 1
+                continue
+            if conn1.innov > conn2.innov:
+                n_disjoint += 1
+                i_g2 += 1
+                continue
+        n_match += 1
+        return (Options.disjoint_coeff * n_excess + Options.disjoint_coeff * n_disjoint) / max(n_g1, n_g2) + Options.weight_coeff * weight_difference / n_match
 
 
 class Species:
@@ -470,7 +498,7 @@ class Species:
             self.stagnation = 0
 
     def same_species(self, brain):
-        return Brain.distance(brain, self.best) <= Options.compatibility_threshold
+        return Brain.compat_dist(brain, self.best) <= Options.compatibility_threshold
 
 
 class Population:
@@ -605,8 +633,7 @@ if __name__ == '__main__':
     xor_out = [0, 1, 1, 0]
 
     # focus more on reducing nodes and mutating weights
-    Options.set_options(2, 1, 150, 3.9, weight_mutate_prob=0.2,
-                        add_node_prob=0.005, add_conn_prob=0.1)
+    Options.set_options(2, 1, 150, 3.9)
     p = Population()
 
     p.evaluate(evaluate)
