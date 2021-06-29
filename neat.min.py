@@ -142,6 +142,12 @@ class Node:
 
         self.val = 0
 
+    def __hash__(self):
+        return hash(self.id)
+
+    # def __eq__(self, other):
+        # return self.id == other.id
+
 
 class Connection:
     def __init__(self, fr, to, innov, weight=None):
@@ -164,14 +170,11 @@ class Brain:
         self.connections = connections
 
         if nodes is not None:
-            self.nodes.sort(key=lambda x: x.id)
             return
 
         input_pos_x = 1/(Options.num_inputs+1)
         output_pos_x = 1/(Options.num_outputs)
         node_id = 0
-
-        self.nodes = []
 
         bias_nodes = []
         input_nodes = []
@@ -190,7 +193,7 @@ class Brain:
                                      (i+0.5)*output_pos_x, 1.0))
             node_id += 1
 
-        self.nodes = bias_nodes + input_nodes + output_nodes
+        self.nodes = set(bias_nodes + input_nodes + output_nodes)
         InnovTable.set_node_id(node_id)
         self.connections = []
 
@@ -271,7 +274,7 @@ class Brain:
         node_id = InnovTable.get_innov(conn.fr, conn.to, False).node_id
         conn.enabled = False
 
-        self.nodes.append(
+        self.nodes.add(
             Node(
                 node_id,
                 NodeState.hidden,
@@ -444,7 +447,7 @@ class Brain:
         if True not in [l.enabled for l in connections]:
             random.choice(connections).enabled = True
 
-        return Brain(baby_id, nodes, connections)
+        return Brain(baby_id, set(nodes), connections)
 
 
 class Species:
