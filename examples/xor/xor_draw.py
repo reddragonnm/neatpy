@@ -1,6 +1,7 @@
 from neatpy.options import Options
 from neatpy.population import Population
 from neatpy.draw import draw_brain_pygame
+from neatpy.save import save_brain
 
 import pygame as pg
 from pygame.color import THECOLORS as colors
@@ -8,8 +9,7 @@ from pygame.color import THECOLORS as colors
 pg.init()
 screen = pg.display.set_mode((400, 400))
 
-Options.set_options(2, 1, 150, 3.9, weight_mutate_prob=0.5,
-                    add_node_prob=0.005, add_conn_prob=0.1, target_species=20)
+Options.set_options(2, 1, 150, 3.9)
 
 p = Population()
 
@@ -41,4 +41,5 @@ while p.best.fitness < max_fitness:
 
     pg.display.update()
 
+save_brain(p.best, 'brain_test')
 pg.image.save(screen, 'file.png')

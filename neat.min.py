@@ -1,13 +1,7 @@
-import math
 import random
 import enum
+import math
 import copy
-
-import pygame as pg
-from pygame.draw import circle, line
-from pygame.color import THECOLORS as colors
-
-random.seed(10)
 
 
 def sigmoid(x):
@@ -17,49 +11,7 @@ def sigmoid(x):
         return 0 if x < 0 else 1
 
 
-class Innovation:
-    def __init__(self, innov, new_conn, fr=None, to=None, node_id=None):
-        self.innov = innov
-        self.new_conn = new_conn
-        self.fr = fr
-        self.to = to
-        self.node_id = node_id
-
-
-class InnovTable:
-    history = []
-    innov = 0
-    node_id = 0
-
-    @staticmethod
-    def set_node_id(node_id):
-        InnovTable.node_id = max(InnovTable.node_id, node_id)
-
-    @staticmethod
-    def create_innov(fr, to, new_conn):
-        if new_conn:
-            innovation = Innovation(InnovTable.innov, new_conn, fr, to)
-        else:
-            innovation = Innovation(
-                InnovTable.innov, new_conn, fr, to, node_id=InnovTable.node_id)
-            InnovTable.node_id += 1
-
-        InnovTable.history.append(innovation)
-        InnovTable.innov += 1
-
-        return innovation
-
-    @staticmethod
-    def get_innov(fr, to, new_conn=True):
-        for innovation in InnovTable.history:
-            if innovation.new_conn == new_conn and innovation.fr == fr and innovation.to == to:
-                return innovation
-
-        return InnovTable.create_innov(fr, to, new_conn)
-
-
 class Options:
-
     @staticmethod
     def set_options(
         num_inputs,
@@ -92,6 +44,15 @@ class Options:
         target_species=20,
         dropoff_age=15,
         survival_rate=0.2,
+        species_elitism=True,
+
+        crossover_rate=1,
+        tries_tournament_selection=3,
+
+        young_age_threshhold=10,
+        young_age_fitness_bonus=1.3,
+        old_age_threshold=50,
+        old_age_fitness_penalty=0.7
     ):
         Options.num_inputs = num_inputs
         Options.num_outputs = num_outputs
@@ -123,6 +84,15 @@ class Options:
         Options.target_species = target_species
         Options.dropoff_age = dropoff_age
         Options.survival_rate = survival_rate
+        Options.species_elitism = species_elitism
+
+        Options.crossover_rate = crossover_rate
+        Options.tries_tournament_selection = tries_tournament_selection
+
+        Options.young_age_threshhold = young_age_threshhold
+        Options.young_age_fitness_bonus = young_age_fitness_bonus
+        Options.old_age_threshold = old_age_threshold
+        Options.old_age_fitness_penalty = old_age_fitness_penalty
 
 
 class NodeState(enum.Enum):
@@ -142,12 +112,6 @@ class Node:
 
         self.val = 0
 
-    def __hash__(self):
-        return hash(self.id)
-
-    # def __eq__(self, other):
-        # return self.id == other.id
-
 
 class Connection:
     def __init__(self, fr, to, innov, weight=None):
@@ -161,6 +125,47 @@ class Connection:
         self.innov = innov
 
 
+class Innovation:
+    def __init__(self, innov, new_conn, fr=None, to=None, node_id=None):
+        self.innov = innov
+        self.new_conn = new_conn
+        self.fr = fr
+        self.to = to
+        self.node_id = node_id
+
+
+class InnovTable:
+    history = []
+    innov = 0
+    node_id = 0
+
+    @staticmethod
+    def set_node_id(node_id):
+        InnovTable.node_id = max(InnovTable.node_id, node_id)
+
+    @staticmethod
+    def _create_innov(fr, to, new_conn):
+        if new_conn:
+            innovation = Innovation(InnovTable.innov, new_conn, fr, to)
+        else:
+            innovation = Innovation(
+                InnovTable.innov, new_conn, fr, to, node_id=InnovTable.node_id)
+            InnovTable.node_id += 1
+
+        InnovTable.history.append(innovation)
+        InnovTable.innov += 1
+
+        return innovation
+
+    @staticmethod
+    def get_innov(fr, to, new_conn=True):
+        for innovation in InnovTable.history:
+            if innovation.new_conn == new_conn and innovation.fr == fr and innovation.to == to:
+                return innovation
+
+        return InnovTable._create_innov(fr, to, new_conn)
+
+
 class Brain:
     def __init__(self, genome_id, nodes=None, connections=None):
         self.id = genome_id
@@ -170,11 +175,14 @@ class Brain:
         self.connections = connections
 
         if nodes is not None:
+            self.nodes.sort(key=lambda x: x.id)
             return
 
         input_pos_x = 1/(Options.num_inputs+1)
         output_pos_x = 1/(Options.num_outputs)
         node_id = 0
+
+        self.nodes = []
 
         bias_nodes = []
         input_nodes = []
@@ -193,19 +201,31 @@ class Brain:
                                      (i+0.5)*output_pos_x, 1.0))
             node_id += 1
 
-        self.nodes = set(bias_nodes + input_nodes + output_nodes)
+        self.nodes = bias_nodes + input_nodes + output_nodes
         InnovTable.set_node_id(node_id)
         self.connections = []
 
-        for node1 in input_nodes + bias_nodes:
-            for node2 in output_nodes:
-                self.connections.append(
-                    Connection(
-                        node1.id,
-                        node2.id,
-                        InnovTable.get_innov(node1.id, node2.id).innov
-                    )
+        if Options.feature_selection:
+            inp = random.choice(input_nodes + bias_nodes)
+            out = random.choice(output_nodes)
+
+            self.connections.append(
+                Connection(
+                    inp.id,
+                    out.id,
+                    InnovTable.get_innov(inp.id, out.id).innov
                 )
+            )
+        else:
+            for node1 in input_nodes + bias_nodes:
+                for node2 in output_nodes:
+                    self.connections.append(
+                        Connection(
+                            node1.id,
+                            node2.id,
+                            InnovTable.get_innov(node1.id, node2.id).innov
+                        )
+                    )
 
     def get_draw_info(self):
         info = {
@@ -229,20 +249,23 @@ class Brain:
             string = 'enabled' if conn.enabled else 'disabled'
             info['connections'][string].append(
                 {
-                    'from': (self.get_node(conn.fr).x, self.get_node(conn.fr).y),
-                    'to': (self.get_node(conn.to).x, self.get_node(conn.to).y),
+                    'from': (self._get_node(conn.fr).x, self._get_node(conn.fr).y),
+                    'to': (self._get_node(conn.to).x, self._get_node(conn.to).y),
                     'weight': conn.weight
                 }
             )
 
         return info
 
-    def add_conn(self):
+    def _filter_nodes(self, *args):
+        return [node for node in self.nodes if node.state in args]
+
+    def _add_conn(self):
         valid = []
 
         for node1 in self.nodes:
             for node2 in self.nodes:
-                if self.valid_conn(node1, node2):
+                if self._valid_conn(node1, node2):
                     valid.append((node1.id, node2.id))
 
         if valid:
@@ -256,7 +279,7 @@ class Brain:
                 )
             )
 
-    def add_node(self):
+    def _add_node(self):
         valid = [
             conn for conn in self.connections if conn.enabled and conn.fr != 0]
 
@@ -265,8 +288,8 @@ class Brain:
         else:
             return
 
-        fr = self.get_node(conn.fr)
-        to = self.get_node(conn.to)
+        fr = self._get_node(conn.fr)
+        to = self._get_node(conn.to)
 
         x = (fr.x + to.x) / 2
         y = (fr.y + to.y) / 2
@@ -274,7 +297,7 @@ class Brain:
         node_id = InnovTable.get_innov(conn.fr, conn.to, False).node_id
         conn.enabled = False
 
-        self.nodes.add(
+        self.nodes.append(
             Node(
                 node_id,
                 NodeState.hidden,
@@ -302,10 +325,10 @@ class Brain:
 
     def mutate(self):
         if random.random() < Options.add_node_prob and len(self.nodes) < Options.max_nodes:
-            self.add_node()
+            self._add_node()
 
         if random.random() < Options.add_conn_prob:
-            self.add_conn()
+            self._add_conn()
 
         for conn in self.connections:
             if random.random() < Options.weight_mutate_prob:
@@ -316,15 +339,31 @@ class Brain:
                     conn.weight += random.uniform(-1, 1) * \
                         Options.weight_mutate_power
 
-    def get_input_connections(self, node_id):
+    def _get_input_connections(self, node_id):
+        """Returns all connections where the connection leads to a node with given node_id
+
+        Args:
+            node_id (int): ID of the node
+
+        Returns:
+            List[Connections]: List of the connections where connection.to is node_id
+        """
         return [conn for conn in self.connections if conn.to == node_id]
 
-    def get_node(self, node_id):
+    def _get_node(self, node_id):
+        """Returns node with given node_id in self.nodes
+
+        Args:
+            node_id (int): ID of the node
+
+        Returns:
+            Node: The Node which has the id -> node_id
+        """
         for node in self.nodes:
             if node.id == node_id:
                 return node
 
-    def valid_conn(self, node1, node2):
+    def _valid_conn(self, node1, node2):
         for conn in self.connections:
             if conn.fr == node1.id and conn.to == node2.id:
                 return False
@@ -357,10 +396,10 @@ class Brain:
 
                 else:
                     values = []
-                    for conn in self.get_input_connections(node.id):
+                    for conn in self._get_input_connections(node.id):
                         if conn.enabled:
                             values.append(
-                                conn.weight * self.get_node(conn.fr).val)
+                                conn.weight * self._get_node(conn.fr).val)
 
                     node.val = Options.activation_func(
                         Options.aggregation_func(values))
@@ -368,86 +407,86 @@ class Brain:
         return [node.val for node in self.nodes if node.state == NodeState.output]
 
     @staticmethod
-    def crossover(a, b, baby_id=None):
-        n1 = len(a.connections)
-        n2 = len(b.connections)
+    def crossover(mum, dad, baby_id=None):
+        n_mum = len(mum.connections)
+        n_dad = len(dad.connections)
 
-        if a.fitness == b.fitness:
-            if n1 == n2:
-                better = random.choice([a, b])
-            elif n1 < n2:
-                better = a
+        if mum.fitness == dad.fitness:
+            if n_mum == n_dad:
+                better = random.choice([mum, dad])
+            elif n_mum < n_dad:
+                better = mum
             else:
-                better = b
-        elif a.fitness > b.fitness:
-            better = a
+                better = dad
+        elif mum.fitness > dad.fitness:
+            better = mum
         else:
-            better = b
+            better = dad
 
-        nodes = []
-        connections = []
+        baby_nodes = []
+        baby_connections = []
 
-        i_a = i_b = 0
+        i_mum = i_dad = 0
         node_ids = set()
 
-        while i_a < n1 or i_b < n2:
-            a_gene = a.connections[i_a] if i_a < n1 else None
-            b_gene = b.connections[i_b] if i_b < n2 else None
+        while i_mum < n_mum or i_dad < n_dad:
+            mum_gene = mum.connections[i_mum] if i_mum < n_mum else None
+            dad_gene = dad.connections[i_dad] if i_dad < n_dad else None
 
             selected_gene = None
             selected_genome = None
 
-            if a_gene and b_gene:
-                if a_gene.innov == b_gene.innov:
+            if mum_gene and dad_gene:
+                if mum_gene.innov == dad_gene.innov:
                     selected_gene, selected_genome = random.choice(
-                        [(a_gene, a), (b_gene, b)])
+                        [(mum_gene, mum), (dad_gene, dad)])
 
-                    i_a += 1
-                    i_b += 1
+                    i_mum += 1
+                    i_dad += 1
 
-                elif b_gene.innov < a_gene.innov:
-                    if better == b:
-                        selected_gene = b.connections[i_b]
-                        selected_genome = b
-                    i_b += 1
+                elif dad_gene.innov < mum_gene.innov:
+                    if better == dad:
+                        selected_gene = dad.connections[i_dad]
+                        selected_genome = dad
+                    i_dad += 1
 
-                elif a_gene.innov < b_gene.innov:
-                    if better == a:
-                        selected_gene = a_gene
-                        selected_genome = a
-                    i_a += 1
+                elif mum_gene.innov < dad_gene.innov:
+                    if better == mum:
+                        selected_gene = mum_gene
+                        selected_genome = mum
+                    i_mum += 1
 
-            elif a_gene == None and b_gene:
-                if better == b:
-                    selected_gene = b.connections[i_b]
-                    selected_genome = b
-                i_b += 1
+            elif mum_gene == None and dad_gene:
+                if better == dad:
+                    selected_gene = dad.connections[i_dad]
+                    selected_genome = dad
+                i_dad += 1
 
-            elif a_gene and b_gene == None:
-                if better == a:
-                    selected_gene = a_gene
-                    selected_genome = a
-                i_a += 1
+            elif mum_gene and dad_gene == None:
+                if better == mum:
+                    selected_gene = mum_gene
+                    selected_genome = mum
+                i_mum += 1
 
             if selected_gene is not None and selected_genome is not None:
-                connections.append(copy.copy(selected_gene))
+                baby_connections.append(copy.copy(selected_gene))
 
                 if not selected_gene.fr in node_ids:
-                    node = selected_genome.get_node(selected_gene.fr)
+                    node = selected_genome._get_node(selected_gene.fr)
                     if node != None:
-                        nodes.append(copy.copy(node))
+                        baby_nodes.append(copy.copy(node))
                         node_ids.add(selected_gene.fr)
 
                 if not selected_gene.to in node_ids:
-                    node = selected_genome.get_node(selected_gene.to)
+                    node = selected_genome._get_node(selected_gene.to)
                     if node != None:
-                        nodes.append(copy.copy(node))
+                        baby_nodes.append(copy.copy(node))
                         node_ids.add(selected_gene.to)
 
-        if True not in [l.enabled for l in connections]:
-            random.choice(connections).enabled = True
+        if True not in [l.enabled for l in baby_connections]:
+            random.choice(baby_connections).enabled = True
 
-        return Brain(baby_id, set(nodes), connections)
+        return Brain(baby_id, baby_nodes, baby_connections)
 
 
 class Species:
@@ -461,7 +500,9 @@ class Species:
         self.stagnation = 0
 
         self.spawns_required = 0
-        self.average_fitness = 0
+
+        self.max_fitness = 0.0
+        self.average_fitness = 0.0
 
     def purge(self):
         self.age += 1
@@ -469,29 +510,40 @@ class Species:
         self.pool[:] = []
 
     def get_brain(self):
-        thresh = random.uniform(
-            0, sum(m.fitness for m in self.pool))
+        best = self.pool[0]
+        for _ in range(min(len(self.pool), Options.tries_tournament_selection)):
+            g = random.choice(self.pool)
+            if g.fitness > best.fitness:
+                best = g
 
-        for m in self.pool:
-            thresh -= m.fitness
-
-            if thresh <= 0:
-                return m
+        return best
 
     def cull(self):
-        n = round(len(self.pool) * Options.survival_rate)
-        self.pool[:] = self.pool[:max(1, n)]
+        self.pool[:] = self.pool[:max(
+            1, round(len(self.pool) * Options.survival_rate))]
 
     def adjust_fitnesses(self):
-        self.average_fitness = sum(m.fitness / len(self.pool)
-                                   for m in self.pool)
+        total = 0
+        for m in self.pool:
+            fitness = m.fitness
+
+            if self.age < Options.young_age_threshhold:
+                fitness *= Options.young_age_fitness_bonus
+
+            if self.age > Options.old_age_threshold:
+                fitness *= Options.old_age_fitness_penalty
+
+            total += fitness / len(self.pool)
+
+        self.average_fitness = total
 
     def make_leader(self):
         self.pool.sort(key=lambda x: x.fitness, reverse=True)
+        self.best = self.pool[0]
 
-        if self.pool[0].fitness > self.best.fitness:
-            self.best = self.pool[0]
+        if self.best.fitness > self.max_fitness:
             self.stagnation = 0
+            self.max_fitness = self.best.fitness
 
     @staticmethod
     def compat_dist(genome1, genome2):
@@ -567,7 +619,7 @@ class Population:
             elif self.gen >= num_generations:
                 return self.best, False
 
-    def speciate(self):
+    def _speciate(self):
         for brain in self.pool:
             added = False
 
@@ -583,22 +635,29 @@ class Population:
 
         self.species[:] = [sp for sp in self.species if len(sp.pool) > 0]
 
-    def calc_spawns(self):
+    def _calc_spawns(self):
         total = max(1, sum([sp.average_fitness for sp in self.species]))
         for sp in self.species:
             sp.spawns_required = Options.population_size * sp.average_fitness / total
 
-    def reproduce(self):
+    def _reproduce(self):
         self.pool[:] = []
         for s in self.species:
-            new_pool = [s.best]
+            new_pool = []
+
+            if Options.species_elitism:
+                new_pool.append(s.best)
 
             while len(new_pool) < s.spawns_required:
                 brain1 = s.get_brain()
-                brain2 = s.get_brain()
 
-                child = Brain.crossover(brain1, brain2, self.brain_id)
-                self.brain_id += 1
+                if random.random() < Options.crossover_rate:
+                    brain2 = s.get_brain()
+                    child = Brain.crossover(brain1, brain2, self.brain_id)
+                    self.brain_id += 1
+                else:
+                    # child = copy.copy(brain1)
+                    child = Brain.crossover(brain1, brain1)
 
                 child.mutate()
                 new_pool.append(child)
@@ -610,7 +669,7 @@ class Population:
             self.pool.append(Brain(self.brain_id))
             self.brain_id += 1
 
-    def sort_pool(self):
+    def _sort_pool(self):
         self.pool.sort(key=lambda x: x.fitness, reverse=True)
 
         assert self.pool[-1].fitness >= 0, "Cannot handle negative fitness values"
@@ -618,19 +677,19 @@ class Population:
         if self.best.fitness < self.pool[0].fitness:
             self.best = self.pool[0]
 
-    def adjust_fitnesses(self):
+    def _adjust_fitnesses(self):
         for s in self.species:
             s.make_leader()
             s.adjust_fitnesses()
 
-    def change_compatibility_threshold(self):
+    def _change_compatibility_threshold(self):
         if len(self.species) < Options.target_species:
             Options.compatibility_threshold *= 0.95
 
         elif len(self.species) > Options.target_species:
             Options.compatibility_threshold *= 1.05
 
-    def reset_and_kill(self):
+    def _reset_and_kill(self):
         new_species = []
 
         for sp in self.species:
@@ -643,22 +702,27 @@ class Population:
         self.species[:] = new_species
 
     def epoch(self):
-        self.sort_pool()
-        self.speciate()
-        self.adjust_fitnesses()
+        self._sort_pool()
+        self._speciate()
 
         if Options.dynamic_compatibility_threshold:
-            self.change_compatibility_threshold()
+            self._change_compatibility_threshold()
 
-        self.calc_spawns()
+        self._adjust_fitnesses()
+        self._calc_spawns()
 
-        self.reset_and_kill()
-        self.reproduce()
+        self._reset_and_kill()
+        self._reproduce()
 
         self.gen += 1
 
     def __str__(self):
-        return f'{self.gen} - {self.best.fitness}'
+        b = self.best
+        return f'{self.gen} - {b.fitness}'
+
+
+xor_inp = [(0, 0), (0, 1), (1, 0), (1, 1)]
+xor_out = [0, 1, 1, 0]
 
 
 def evaluate(nns):
@@ -670,79 +734,15 @@ def evaluate(nns):
             nn.fitness -= (output - xo) ** 2
 
 
-def draw_brain_pygame(screen, brain, x=50, y=50, dim=300, circle_size=15, line_width=4, node_border_thickness=1):
-    info = brain.get_draw_info()
-
-    for conn in info['connections']['enabled']:
-        line(
-            screen,
-            colors['dodgerblue'] if conn['weight'] > 0 else colors['coral'],
-            (int(dim * conn['from'][1] + x), int(dim * conn['from'][0] + y)),
-            (int(dim * conn['to'][1] + x), int(dim * conn['to'][0] + y)),
-            line_width
-        )
-
-    for inp in info['nodes']['input']:
-        circle(screen, colors['white'], (int(
-            dim * inp[1] + x), int(dim * inp[0] + y)), circle_size)
-        circle(screen, colors['black'], (int(
-            dim * inp[1] + x), int(dim * inp[0] + y)), circle_size, node_border_thickness)
-
-    for inp in info['nodes']['bias']:
-        circle(screen, colors['white'], (int(
-            dim * inp[1] + x), int(dim * inp[0] + y)), circle_size)
-        circle(screen, colors['black'], (int(
-            dim * inp[1] + x), int(dim * inp[0] + y)), circle_size, node_border_thickness)
-
-    for inp in info['nodes']['hidden']:
-        circle(screen, colors['white'], (int(
-            dim * inp[1] + x), int(dim * inp[0] + y)), circle_size)
-        circle(screen, colors['black'], (int(
-            dim * inp[1] + x), int(dim * inp[0] + y)), circle_size, node_border_thickness)
-
-    for inp in info['nodes']['output']:
-        circle(screen, colors['white'], (int(
-            dim * inp[1] + x), int(dim * inp[0] + y)), circle_size)
-        circle(screen, colors['black'], (int(
-            dim * inp[1] + x), int(dim * inp[0] + y)), circle_size, node_border_thickness)
-
-
 if __name__ == '__main__':
-    # pg.init()
-    # screen = pg.display.set_mode((400, 400))
-
-    xor_inp = [(0, 0), (0, 1), (1, 0), (1, 1)]
-    xor_out = [0, 1, 1, 0]
-
-    Options.set_options(2, 1, 150, 3.9, weight_mutate_prob=0.5,
-                        add_node_prob=0.005, add_conn_prob=0.1)
-
-    # p = Population()
-    # # best, solved = p.evaluate(evaluate, 400)
-
-    # while p.best.fitness < 3.9:
-    #     screen.fill(colors['lightgreen'])
-
-    #     for nn in p.pool:
-    #         nn.fitness = 4
-
-    #         for xi, xo in zip(xor_inp, xor_out):
-    #             output = nn.predict(xi)[0]
-    #             nn.fitness -= (output - xo) ** 2
-
-    #     draw_brain_pygame(screen, p.best, dim=250, x=75,
-    #                       y=40, circle_size=20, line_width=7)
-
-    #     p.epoch()
-    #     print(p)
-
-    #     for event in pg.event.get():
-    #         if event.type == pg.QUIT:
-    #             pg.quit()
-    #             quit()
-
-    #     pg.display.update()
+    Options.set_options(2, 1, 150, 3.9, weight_mutate_prob=0.3,
+                        add_node_prob=0.05, add_conn_prob=0.1)
 
     p = Population()
+    best, solved = p.evaluate(evaluate, 400)
 
-    p.evaluate(evaluate)
+    c = [(i.fr, i.to) for i in best.connections]
+    print([i.id for i in best.nodes])
+    print(c)
+
+    assert len(c) == len(set(c))
