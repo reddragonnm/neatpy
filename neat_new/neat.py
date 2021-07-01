@@ -1,4 +1,41 @@
+from neat_min import Options
 import random
+
+
+class Options:
+    inputs = None
+    outputs = None
+
+
+class NodeState:
+    bias = 'bias'
+    input = 'input'
+    hidden = 'hidden'
+    output = 'output'
+
+
+class Node:
+    history = {'id': 0}
+    pos = {}
+
+    @staticmethod
+    def get_node_id(conn):
+        if Node.history.get(conn) is None:
+            Node.history[conn] = Node.history['id']
+            Node.history['id'] += 1
+
+        return Node.history[conn]
+
+    @staticmethod
+    def get_state(idx):
+        if idx == 0:
+            return NodeState.bias
+        elif idx <= Options.inputs:
+            return NodeState.input
+        elif idx <= Options.inputs + Options.outputs:
+            return NodeState.output
+
+        return NodeState.hidden
 
 
 def new_conn(weight=None, enabled=True):
@@ -11,11 +48,6 @@ def new_conn(weight=None, enabled=True):
     }
 
 
-class Options:
-    inputs = None
-    outputs = None
-
-
 class Brain:
     def __init__(self, nodes=None, conns=None):
         self._nodes = nodes
@@ -24,9 +56,9 @@ class Brain:
         self._fitness = 0
 
         if self._nodes is None:
-            self.generate_network()
+            self._gen_network()
 
-    def generate_network(self):
+    def _gen_network(self):
         self._nodes = set(i for i in range(
             Options.inputs + Options.outputs + 1))
 

@@ -1,18 +1,19 @@
-import unittest
 import random
+from neat import Brain, Options, Node
 
-from neat import Brain, Options
 
-
-class TestGen(unittest.TestCase):
+class TestGen:
     def check_num(self, i, o, b):
-        self.assertEqual(len(b._nodes), i + o + 1)
-        self.assertEqual(len(b._conns), (i + 1) * o)
+        assert len(b._nodes) == i + o + 1
+        assert len(b._conns) == (i + 1) * o
 
     def check_valid(self, i, o, b):
+        for i in range(i + 1):
+            assert i in b._nodes
+
         for conn in list(b._conns):
-            self.assertLessEqual(conn[0], i)
-            self.assertGreater(conn[1], i)
+            assert 0 <= conn[0] <= i
+            assert i < conn[1] <= i + o
 
     def test_main(self):
         for _ in range(10):
@@ -26,5 +27,9 @@ class TestGen(unittest.TestCase):
             self.check_valid(i, o, b)
 
 
-if __name__ == '__main__':
-    unittest.main()
+class TestNode:
+    def check_node_history(self):
+        pass
+
+    def test_main(self):
+        self.check_node_history()
