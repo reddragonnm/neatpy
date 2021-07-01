@@ -24,10 +24,13 @@ class Brain:
         self._fitness = 0
 
         if self._nodes is None:
-            self._nodes = set(i for i in range(
-                Options.inputs + Options.outputs + 1))
+            self.generate_network()
 
-            self._conns = dict()
-            for i in range(Options.outputs):
-                for j in range(Options.inputs + 1):
-                    self._conns[j, Options.inputs + 1 + i] = new_conn()
+    def generate_network(self):
+        self._nodes = set(i for i in range(
+            Options.inputs + Options.outputs + 1))
+
+        self._conns = dict()
+        for i in range(Options.outputs):
+            for j in range(Options.inputs + 1):
+                self._conns[j, Options.inputs + 1 + i] = new_conn()
