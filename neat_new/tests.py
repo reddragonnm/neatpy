@@ -30,13 +30,21 @@ class TestGen:
 
 class TestNode:
     def check_add_node(self, b):
-        n1 = len(b._nodes)
-
+        n1 = b._nodes.copy()
         b._add_node()
+        n2 = b._nodes.copy()
 
-        n2 = len(b._nodes)
+        node_id = list(n2 - n1)[0]
+        conn = None
 
-        assert n1 + 1 == n2
+        for c in Node._history:
+            if Node._history[c] == node_id:
+                conn = c
+
+        assert b._conns[conn]['enabled'] == False
+        assert b._conns.get((conn[0], node_id)) is not None
+        assert b._conns.get((node_id, conn[1])) is not None
+        assert len(n1) + 1 == len(n2)
 
     def test_main(self):
         for _ in range(1000):

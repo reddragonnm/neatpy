@@ -93,6 +93,8 @@ class Brain:
         self._conns[conn[0], node_id] = new_conn(1)
         self._conns[node_id, conn[1]] = new_conn(self._conns[conn]['weight'])
 
+        return node_id
+
 
 if __name__ == '__main__':
     Options.inputs = 2
@@ -100,6 +102,7 @@ if __name__ == '__main__':
 
     b = Brain()
 
-    print(b._nodes)
+    print(b._nodes, b._conns, Node._history)
     b._add_node()
-    print(b._nodes)
+    print()
+    print(b._nodes, b._conns, Node._history)
