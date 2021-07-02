@@ -1,4 +1,3 @@
-from neat_min import Options
 import random
 
 
@@ -15,14 +14,15 @@ class NodeState:
 
 
 class Node:
-    history = {'id': 0}
     pos = {}
+    _node_id = 0
+    _history = {}
 
     @staticmethod
     def get_node_id(conn):
-        if Node.history.get(conn) is None:
-            Node.history[conn] = Node.history['id']
-            Node.history['id'] += 1
+        if Node._history.get(conn) is None:
+            Node._history[conn] = Node._node_id
+            Node._node_id += 1
 
         return Node.history[conn]
 

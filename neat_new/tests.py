@@ -8,8 +8,8 @@ class TestGen:
         assert len(b._conns) == (i + 1) * o
 
     def check_valid(self, i, o, b):
-        for i in range(i + 1):
-            assert i in b._nodes
+        for node_id in range(i + o + 1):
+            assert node_id in b._nodes
 
         for conn in list(b._conns):
             assert 0 <= conn[0] <= i
