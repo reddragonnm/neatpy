@@ -1,8 +1,8 @@
 import random
-from neat import Brain, Options, Node
+from neat import Brain, Options, Node, NodeState
 
 
-def brain_test(func):
+def boilerplate(func):
     def wrap():
         for _ in range(1000):
             i, o = random.randrange(1, 20), random.randrange(1, 20)
@@ -15,11 +15,14 @@ def brain_test(func):
     return wrap
 
 
-@brain_test
-def test_main(i, o, b):
+@boilerplate
+def test_num(i, o, b):
     assert len(b._nodes) == i + o + 1
     assert len(b._conns) == (i + 1) * o
 
+
+@boilerplate
+def test_valid(i, o, b):
     for node_id in range(i + o + 1):
         assert node_id in b._nodes
 
@@ -28,7 +31,7 @@ def test_main(i, o, b):
         assert i < conn[1] <= i + o
 
 
-@brain_test
+@boilerplate
 def test_add_node(i, o, b):
     n1 = b._nodes.copy()
     b._add_node()
@@ -40,9 +43,15 @@ def test_add_node(i, o, b):
         if Node.history[c] == node_id:
             conn = c
 
+    assert Node.get_state(node_id) == NodeState.hidden
     assert b._conns[conn]['enabled'] == False
 
     assert b._conns.get((conn[0], node_id)) is not None
     assert b._conns.get((node_id, conn[1])) is not None
 
     assert len(n1) + 1 == len(n2)
+
+
+@boilerplate
+def test_node_pos(i, o, b):
+    pass
