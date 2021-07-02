@@ -29,7 +29,19 @@ class TestGen:
 
 class TestNode:
     def check_node_history(self):
-        pass
+        _id = 0
+        d = {}
+
+        for _ in range(10000):
+            a, b = random.randrange(10), random.randrange(10)
+
+            if d.get((a, b)) is None:
+                d[a, b] = _id
+                _id += 1
+
+            assert d[a, b] == Node.get_node_id((a, b))
+
+        assert d == Node._history
 
     def test_main(self):
         self.check_node_history()

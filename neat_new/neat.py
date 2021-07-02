@@ -24,7 +24,7 @@ class Node:
             Node._history[conn] = Node._node_id
             Node._node_id += 1
 
-        return Node.history[conn]
+        return Node._history[conn]
 
     @staticmethod
     def get_state(idx):
