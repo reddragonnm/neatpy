@@ -22,6 +22,11 @@ class Node:
     _history = {}
 
     @staticmethod
+    def reset_test():
+        Node._node_id = 0
+        Node._history = {}
+
+    @staticmethod
     def set_node_id(node_id):
         Node._node_id = max(Node._node_id, node_id)
 
@@ -74,7 +79,7 @@ class Brain:
             for j in range(Options.inputs + 1):
                 self._conns[j, Options.inputs + 1 + i] = new_conn()
 
-        Node.set_node_id(max(self._nodes))
+        Node.set_node_id(max(self._nodes) + 1)
 
     def _add_node(self):
         conn = random.choice(
@@ -87,3 +92,14 @@ class Brain:
 
         self._conns[conn[0], node_id] = new_conn(1)
         self._conns[node_id, conn[1]] = new_conn(self._conns[conn]['weight'])
+
+
+if __name__ == '__main__':
+    Options.inputs = 2
+    Options.outputs = 1
+
+    b = Brain()
+
+    print(b._nodes)
+    b._add_node()
+    print(b._nodes)

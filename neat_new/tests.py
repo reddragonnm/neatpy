@@ -2,28 +2,6 @@ import random
 from neat import Brain, Options, Node
 
 
-class TestNode:
-    def check_node_history(self):
-        _id = 0
-        d = {}
-
-        for _ in range(1000):
-            a, b = random.randrange(100), random.randrange(100)
-
-            if d.get((a, b)) is None:
-                d[a, b] = _id
-                _id += 1
-
-            assert d[a, b] == Node.get_node_id((a, b))
-
-        assert d == Node._history
-
-    def check_add_node(self):
-        pass
-
-    def test_main(self):
-        self.check_node_history()
-
 class TestGen:
     def check_num(self, i, o, b):
         assert len(b._nodes) == i + o + 1
@@ -39,6 +17,7 @@ class TestGen:
 
     def test_main(self):
         for _ in range(1000):
+            Node.reset_test()
             i, o = random.randrange(1, 20), random.randrange(1, 20)
 
             Options.inputs = i
@@ -47,3 +26,25 @@ class TestGen:
 
             self.check_num(i, o, b)
             self.check_valid(i, o, b)
+
+
+class TestNode:
+    def check_add_node(self, b):
+        n1 = len(b._nodes)
+
+        b._add_node()
+
+        n2 = len(b._nodes)
+
+        assert n1 + 1 == n2
+
+    def test_main(self):
+        for _ in range(1000):
+            i, o = random.randrange(1, 5), random.randrange(1, 5)
+            Node.reset_test()
+
+            Options.inputs = i
+            Options.outputs = o
+            b = Brain()
+
+            self.check_add_node(b)
