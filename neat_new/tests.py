@@ -17,11 +17,12 @@ class TestGen:
 
     def test_main(self):
         for _ in range(1000):
-            Node.reset_test()
             i, o = random.randrange(1, 20), random.randrange(1, 20)
 
             Options.inputs = i
             Options.outputs = o
+            Node.reset_test()
+
             b = Brain()
 
             self.check_num(i, o, b)
@@ -37,8 +38,8 @@ class TestNode:
         node_id = list(n2 - n1)[0]
         conn = None
 
-        for c in Node._history:
-            if Node._history[c] == node_id:
+        for c in Node.history:
+            if Node.history[c] == node_id:
                 conn = c
 
         assert b._conns[conn]['enabled'] == False
@@ -46,7 +47,21 @@ class TestNode:
         assert b._conns.get((node_id, conn[1])) is not None
         assert len(n1) + 1 == len(n2)
 
+    def check_add_conn(self, b):
+        pass
+
     def test_main(self):
+        for _ in range(1000):
+            i, o = random.randrange(1, 5), random.randrange(1, 5)
+
+            Options.inputs = i
+            Options.outputs = o
+
+            Node.reset_test()
+            b = Brain()
+
+            self.check_add_node(b)
+
         for _ in range(1000):
             i, o = random.randrange(1, 5), random.randrange(1, 5)
             Node.reset_test()
@@ -55,4 +70,4 @@ class TestNode:
             Options.outputs = o
             b = Brain()
 
-            self.check_add_node(b)
+            self.check_add_conn(b)

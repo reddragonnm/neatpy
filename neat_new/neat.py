@@ -18,25 +18,33 @@ class NodeState:
 
 class Node:
     pos = {}
-    _node_id = 0
-    _history = {}
+    node_id = 0
+    history = {}
 
     @staticmethod
     def reset_test():
-        Node._node_id = 0
-        Node._history = {}
+        Node.node_id = 0
+        Node.history = {}
+
+        Node.setup()
 
     @staticmethod
-    def set_node_id(node_id):
-        Node._node_id = max(Node._node_id, node_id)
+    def setup():
+        Node.node_id = Options.inputs + Options.outputs + 1
+
+        for i in range(Options.inputs + 1):
+            Node.pos[i] = 0, 0
+
+        for i in range(Options.outputs):
+            Node.pos[Options.inputs + 1 + i] = 0, 1
 
     @staticmethod
     def get_node_id(conn):
-        if Node._history.get(conn) is None:
-            Node._history[conn] = Node._node_id
-            Node._node_id += 1
+        if Node.history.get(conn) is None:
+            Node.history[conn] = Node.node_id
+            Node.node_id += 1
 
-        return Node._history[conn]
+        return Node.history[conn]
 
     @staticmethod
     def get_state(idx):
@@ -79,8 +87,6 @@ class Brain:
             for j in range(Options.inputs + 1):
                 self._conns[j, Options.inputs + 1 + i] = new_conn()
 
-        Node.set_node_id(max(self._nodes) + 1)
-
     def _add_node(self):
         conn = random.choice(
             [i for i in self._conns if i[0] != 0 and self._conns[i]['enabled']])
@@ -93,16 +99,18 @@ class Brain:
         self._conns[conn[0], node_id] = new_conn(1)
         self._conns[node_id, conn[1]] = new_conn(self._conns[conn]['weight'])
 
-        return node_id
+    def _add_conn(self):
+        pass
 
 
 if __name__ == '__main__':
     Options.inputs = 2
     Options.outputs = 1
+    Node.setup()
 
     b = Brain()
 
-    print(b._nodes, b._conns, Node._history)
+    print(b._nodes, b._conns, Node.history)
     b._add_node()
     print()
-    print(b._nodes, b._conns, Node._history)
+    print(b._nodes, b._conns, Node.history)
