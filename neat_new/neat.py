@@ -5,6 +5,9 @@ class Options:
     inputs = None
     outputs = None
 
+    add_node_prob = 0.02
+    add_conn_prob = 0.05
+
 
 class NodeState:
     bias = 'bias'
@@ -17,6 +20,10 @@ class Node:
     pos = {}
     _node_id = 0
     _history = {}
+
+    @staticmethod
+    def set_node_id(node_id):
+        Node._node_id = max(Node._node_id, node_id)
 
     @staticmethod
     def get_node_id(conn):
@@ -66,3 +73,17 @@ class Brain:
         for i in range(Options.outputs):
             for j in range(Options.inputs + 1):
                 self._conns[j, Options.inputs + 1 + i] = new_conn()
+
+        Node.set_node_id(max(self._nodes))
+
+    def _add_node(self):
+        conn = random.choice(
+            [i for i in self._conns if i[0] != 0 and self._conns[i]['enabled']])
+
+        self._conns[conn]['enabled'] = False
+
+        node_id = Node.get_node_id(conn)
+        self._nodes.add(node_id)
+
+        self._conns[conn[0], node_id] = new_conn(1)
+        self._conns[node_id, conn[1]] = new_conn(self._conns[conn]['weight'])
