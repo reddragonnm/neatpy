@@ -22,14 +22,8 @@ class Node:
     history = {}
 
     @staticmethod
-    def reset_test():
-        Node.node_id = 0
-        Node.history = {}
-
-        Node.setup()
-
-    @staticmethod
     def setup():
+        Node.history = {}
         Node.node_id = Options.inputs + Options.outputs + 1
 
         for i in range(Options.inputs + 1):

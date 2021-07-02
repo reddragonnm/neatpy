@@ -21,7 +21,7 @@ class TestGen:
 
             Options.inputs = i
             Options.outputs = o
-            Node.reset_test()
+            Node.setup()
 
             b = Brain()
 
@@ -57,14 +57,14 @@ class TestNode:
             Options.inputs = i
             Options.outputs = o
 
-            Node.reset_test()
+            Node.setup()
             b = Brain()
 
             self.check_add_node(b)
 
         for _ in range(1000):
             i, o = random.randrange(1, 5), random.randrange(1, 5)
-            Node.reset_test()
+            Node.setup()
 
             Options.inputs = i
             Options.outputs = o
