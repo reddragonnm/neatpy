@@ -2,26 +2,29 @@ import random
 from neat import Brain, Options, Node, NodeState
 
 
-def boilerplate(func):
-    def wrap():
-        for _ in range(1000):
-            i, o = random.randrange(1, 20), random.randrange(1, 20)
+def boilerplate(num=10000, run_self=1):
+    def normal(func):
+        def wrap():
+            for x in range(num):
+                i, o = random.randrange(1, 20), random.randrange(1, 20)
 
-            Options.set_options(i, o)
-            b = Brain()
+                Options.set_options(i, o)
+                b = Brain()
 
-            func(i, o, b)
+                for y in range(run_self):
+                    func(i, o, b)
 
-    return wrap
+        return wrap
+    return normal
 
 
-@boilerplate
+@boilerplate()
 def test_num(i, o, b):
     assert len(b._nodes) == i + o + 1
     assert len(b._conns) == (i + 1) * o
 
 
-@boilerplate
+@boilerplate()
 def test_valid(i, o, b):
     for node_id in range(i + o + 1):
         assert node_id in b._nodes
@@ -31,7 +34,7 @@ def test_valid(i, o, b):
         assert i < conn[1] <= i + o
 
 
-@boilerplate
+@boilerplate(num=10, run_self=10)
 def test_add_node(i, o, b):
     n1 = b._nodes.copy()
     b._add_node()
@@ -52,6 +55,6 @@ def test_add_node(i, o, b):
     assert len(n1) + 1 == len(n2)
 
 
-@boilerplate
-def test_node_pos(i, o, b):
-    pass
+def test_node_pos():
+    for i in range(1000):
+        pass

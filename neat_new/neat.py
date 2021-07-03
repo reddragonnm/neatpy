@@ -1,4 +1,5 @@
 import random
+import math
 
 
 def sigmoid(x):
