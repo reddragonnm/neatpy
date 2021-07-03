@@ -2,7 +2,7 @@ import random
 from neat import Brain, Options, Node, NodeState
 
 
-def boilerplate(num=10000, run_self=1):
+def boilerplate(num=1000, run_self=1):
     def normal(func):
         def wrap():
             for x in range(num):
@@ -46,6 +46,8 @@ def test_add_node(i, o, b):
         if Node.history[c] == node_id:
             conn = c
 
+    check_node_pos(node_id, conn)
+
     assert Node.get_state(node_id) == NodeState.hidden
     assert b._conns[conn]['enabled'] == False
 
@@ -55,6 +57,12 @@ def test_add_node(i, o, b):
     assert len(n1) + 1 == len(n2)
 
 
-def test_node_pos():
-    for i in range(1000):
-        pass
+def check_node_pos(node_id, conn):
+    assert Node.pos.get(node_id) is not None
+
+    p = Node.pos[node_id]
+    p1 = Node.pos[conn[0]]
+    p2 = Node.pos[conn[1]]
+
+    assert p[0] == (p1[0] + p2[0]) / 2
+    assert p[1] == (p1[1] + p2[1]) / 2
