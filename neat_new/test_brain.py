@@ -2,11 +2,12 @@ import random
 from neat import Brain, Options, Node, NodeState
 
 
-def boilerplate(num=1000, run_self=1):
+def boilerplate(num=1000, run_self=1, node_range=20):
     def normal(func):
         def wrap():
             for x in range(num):
-                i, o = random.randrange(1, 20), random.randrange(1, 20)
+                i, o = random.randrange(
+                    1, node_range), random.randrange(1, node_range)
 
                 Options.set_options(i, o)
                 b = Brain()
@@ -34,7 +35,7 @@ def test_valid(i, o, b):
         assert i < conn[1] <= i + o
 
 
-@boilerplate(num=10, run_self=10)
+@boilerplate(num=100, run_self=10)
 def test_add_node(i, o, b):
     n1 = b._nodes.copy()
     b._add_node()
@@ -66,3 +67,34 @@ def check_node_pos(node_id, conn):
 
     assert p[0] == (p1[0] + p2[0]) / 2
     assert p[1] == (p1[1] + p2[1]) / 2
+
+
+@boilerplate(num=100, run_self=10)
+def test_add_conn(i, o, b):
+    b._add_node()
+
+    conns = [
+        (i, j)
+        for i in b._nodes
+        for j in b._nodes
+        if b._valid_conn(i, j)
+    ]
+
+    old = b._conns.copy()
+    b._add_conn()
+    new = b._conns.copy()
+
+    new_conn = list(set(new) - set(old))
+
+    if len(new_conn) == 1:
+        assert new_conn[0] in conns
+    elif len(new_conn) == 0:
+        check_list = []
+        for c in conns:
+            if old.get(c) is not None:
+                # older connections that are enabled
+                check_list.append(new.get(c) is not None and new[c]['enabled'])
+
+        assert True in check_list
+    else:
+        assert False

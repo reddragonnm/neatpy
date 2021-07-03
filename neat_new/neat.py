@@ -186,8 +186,33 @@ class Brain:
         self._conns[conn[0], node_id] = new_conn(1)
         self._conns[node_id, conn[1]] = new_conn(self._conns[conn]['weight'])
 
+    def _valid_conn(self, id1, id2):
+        if self._conns.get((id1, id2)) is not None and self._conns[id1, id2]['enabled']:
+            return False
+
+        return (
+            id1 != id2 and
+            Node.get_state(id1) in [NodeState.input,
+                                    NodeState.hidden, NodeState.bias] and
+            Node.get_state(id2) in [NodeState.hidden, NodeState.output] and
+            Node.pos[id1][1] <= Node.pos[id2][1]
+        )
+
     def _add_conn(self):
-        pass
+        conns = [
+            (i, j)
+            for i in self._nodes
+            for j in self._nodes
+            if self._valid_conn(i, j)
+        ]
+
+        if len(conns) > 0:
+            conn = random.choice(conns)
+
+            if self._conns.get(conn) is None:
+                self._conns[conn] = new_conn()
+            else:
+                self._conns[conn]['enabled'] = True
 
 
 if __name__ == '__main__':
