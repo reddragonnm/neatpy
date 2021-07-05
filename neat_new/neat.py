@@ -214,15 +214,23 @@ class Brain:
             else:
                 self._conns[conn]['enabled'] = True
 
+    def mutate(self):
+        if random.random() < Options.add_node_prob and len(self._nodes) < Options.max_nodes:
+            self._add_node()
+
+        if random.random() < Options.add_conn_prob:
+            self._add_conn()
+
+        for conn in self._conns:
+            if random.random() < Options.weight_mutate_prob:
+                if random.random() < Options.new_weight_prob:
+                    self._conns[conn]['weight'] = random.uniform(
+                        -1, 1) * Options.weight_init_range
+                else:
+                    self._conns[conn]['weight'] += random.uniform(-1, 1) * \
+                        Options.weight_mutate_power
+
 
 if __name__ == '__main__':
-    Options.inputs = 2
-    Options.outputs = 1
-    Node.setup()
-
+    Options.set_options(1, 1)
     b = Brain()
-
-    print(b._nodes, b._conns, Node.history)
-    b._add_node()
-    print()
-    print(b._nodes, b._conns, Node.history)
