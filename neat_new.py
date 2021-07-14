@@ -3,6 +3,8 @@ import enum
 import math
 import copy
 
+random.seed(11)
+
 
 def sigmoid(x):
     try:
@@ -95,7 +97,7 @@ class Options:
         Options.old_age_fitness_penalty = old_age_fitness_penalty
 
 
-class NodeState(enum.Enum):
+class NodeState:
     input = 'input'
     hidden = 'hidden'
     output = 'output'
@@ -103,9 +105,19 @@ class NodeState(enum.Enum):
 
 
 class Node:
-    def __init__(self, node_id, state, x, y):
+    @staticmethod
+    def get_state(node_id):
+        if node_id == 0:
+            return NodeState.bias
+        elif 1 <= node_id <= Options.num_inputs:
+            return NodeState.input
+        elif Options.num_inputs < node_id <= Options.num_inputs + Options.num_outputs:
+            return NodeState.output
+
+        return NodeState.hidden
+
+    def __init__(self, node_id, x, y):
         self.id = node_id
-        self.state = state
 
         self.x = x
         self.y = y
@@ -188,16 +200,16 @@ class Brain:
         input_nodes = []
         output_nodes = []
 
-        bias_nodes.append(Node(node_id, NodeState.bias, 0.5*input_pos_x, 0.0))
+        bias_nodes.append(Node(node_id, 0.5*input_pos_x, 0.0))
         node_id += 1
 
         for i in range(Options.num_inputs):
             input_nodes.append(
-                Node(node_id, NodeState.input, (i+1.5)*input_pos_x, 0.0))
+                Node(node_id, (i+1.5)*input_pos_x, 0.0))
             node_id += 1
 
         for i in range(Options.num_outputs):
-            output_nodes.append(Node(node_id, NodeState.output,
+            output_nodes.append(Node(node_id,
                                      (i+0.5)*output_pos_x, 1.0))
             node_id += 1
 
@@ -228,7 +240,7 @@ class Brain:
                     )
 
     def _filter_nodes(self, *args):
-        return [node for node in self.nodes if node.state in args]
+        return [node for node in self.nodes if Node.get_state(node.id) in args]
 
     def _add_conn(self):
         valid = []
@@ -270,7 +282,6 @@ class Brain:
         self.nodes.append(
             Node(
                 node_id,
-                NodeState.hidden,
                 x, y
             )
         )
@@ -340,9 +351,9 @@ class Brain:
 
         return (
             node1.id != node2.id and
-            node1.state in [NodeState.input, NodeState.hidden, NodeState.bias] and
-            node2.state in [NodeState.hidden, NodeState.output] and
-            node1.y <= node2.y
+            Node.get_state(node1.id) in [NodeState.input, NodeState.hidden, NodeState.bias] and
+            Node.get_state(node2.id) in [NodeState.hidden, NodeState.output] and
+            node1.y < node2.y
         )
 
     def predict(self, inputs):
@@ -357,11 +368,11 @@ class Brain:
             inp_num = 0
 
             for node in self.nodes:
-                if node.state == NodeState.input:
+                if Node.get_state(node.id) == NodeState.input:
                     node.val = inputs[inp_num]
                     inp_num += 1
 
-                elif node.state == NodeState.bias:
+                elif Node.get_state(node.id) == NodeState.bias:
                     node.val = 1
 
                 else:
@@ -374,7 +385,7 @@ class Brain:
                     node.val = Options.activation_func(
                         Options.aggregation_func(values))
 
-        return [node.val for node in self.nodes if node.state == NodeState.output]
+        return [node.val for node in self.nodes if Node.get_state(node.id) == NodeState.output]
 
     @staticmethod
     def crossover(mum, dad, baby_id=None):
