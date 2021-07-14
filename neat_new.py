@@ -122,8 +122,6 @@ class Node:
         self.x = x
         self.y = y
 
-        self.val = 0
-
 
 class Connection:
     def __init__(self, fr, to, innov, weight=None):
@@ -360,32 +358,33 @@ class Brain:
         assert len(inputs) == Options.num_inputs
 
         depth = len(set([nn.y for nn in self.nodes]))
+        val = {}
 
         for node in self.nodes:
-            node.val = 0
+            val[node.id] = 0
 
         for _ in range(depth):
             inp_num = 0
 
             for node in self.nodes:
                 if Node.get_state(node.id) == NodeState.input:
-                    node.val = inputs[inp_num]
+                    val[node.id] = inputs[inp_num]
                     inp_num += 1
 
                 elif Node.get_state(node.id) == NodeState.bias:
-                    node.val = 1
+                    val[node.id] = 1
 
                 else:
                     values = []
                     for conn in self._get_input_connections(node.id):
                         if conn.enabled:
                             values.append(
-                                conn.weight * self._get_node(conn.fr).val)
+                                conn.weight * val[conn.fr])
 
-                    node.val = Options.activation_func(
+                    val[node.id] = Options.activation_func(
                         Options.aggregation_func(values))
 
-        return [node.val for node in self.nodes if Node.get_state(node.id) == NodeState.output]
+        return [val[node.id] for node in self.nodes if Node.get_state(node.id) == NodeState.output]
 
     @staticmethod
     def crossover(mum, dad, baby_id=None):
