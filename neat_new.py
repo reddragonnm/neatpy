@@ -105,6 +105,26 @@ class NodeState:
 
 
 class Node:
+    pos = {}
+
+    @staticmethod
+    def init_pos():
+        for i in range(Options.num_inputs + 1):
+            Node.pos[i] = 0, 0
+
+        for i in range(Options.num_outputs):
+            Node.pos[Options.num_inputs + i + 1] = 0, 1
+
+        InnovTable.set_node_id(Options.num_inputs + Options.num_outputs + 1)
+
+    @staticmethod
+    def set_pos(node_id, fr, to):
+        if Node.pos.get(node_id) is None:
+            a = Node.pos[fr]
+            b = Node.pos[to]
+
+            Node.pos[node_id] = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
+
     @staticmethod
     def get_state(node_id):
         if node_id == 0:
@@ -116,11 +136,8 @@ class Node:
 
         return NodeState.hidden
 
-    def __init__(self, node_id, x, y):
+    def __init__(self, node_id):
         self.id = node_id
-
-        self.x = x
-        self.y = y
 
 
 class Connection:
@@ -188,8 +205,6 @@ class Brain:
             self.nodes.sort(key=lambda x: x.id)
             return
 
-        input_pos_x = 1/(Options.num_inputs+1)
-        output_pos_x = 1/(Options.num_outputs)
         node_id = 0
 
         self.nodes = []
@@ -198,21 +213,19 @@ class Brain:
         input_nodes = []
         output_nodes = []
 
-        bias_nodes.append(Node(node_id, 0.5*input_pos_x, 0.0))
+        bias_nodes.append(Node(node_id))
         node_id += 1
 
-        for i in range(Options.num_inputs):
+        for _ in range(Options.num_inputs):
             input_nodes.append(
-                Node(node_id, (i+1.5)*input_pos_x, 0.0))
+                Node(node_id))
             node_id += 1
 
-        for i in range(Options.num_outputs):
-            output_nodes.append(Node(node_id,
-                                     (i+0.5)*output_pos_x, 1.0))
+        for _ in range(Options.num_outputs):
+            output_nodes.append(Node(node_id))
             node_id += 1
 
         self.nodes = bias_nodes + input_nodes + output_nodes
-        InnovTable.set_node_id(node_id)
         self.connections = []
 
         if Options.feature_selection:
@@ -268,21 +281,11 @@ class Brain:
         else:
             return
 
-        fr = self._get_node(conn.fr)
-        to = self._get_node(conn.to)
-
-        x = (fr.x + to.x) / 2
-        y = (fr.y + to.y) / 2
-
         node_id = InnovTable.get_innov(conn.fr, conn.to, False).node_id
         conn.enabled = False
 
-        self.nodes.append(
-            Node(
-                node_id,
-                x, y
-            )
-        )
+        Node.set_pos(node_id, conn.fr, conn.to)
+        self.nodes.append(Node(node_id))
 
         self.connections.append(
             Connection(
@@ -351,13 +354,13 @@ class Brain:
             node1.id != node2.id and
             Node.get_state(node1.id) in [NodeState.input, NodeState.hidden, NodeState.bias] and
             Node.get_state(node2.id) in [NodeState.hidden, NodeState.output] and
-            node1.y < node2.y
+            Node.pos[node1.id][1] < Node.pos[node2.id][1]
         )
 
     def predict(self, inputs):
         assert len(inputs) == Options.num_inputs
 
-        depth = len(set([nn.y for nn in self.nodes]))
+        depth = len(set([Node.pos[nn.id][1] for nn in self.nodes]))
         val = {}
 
         for node in self.nodes:
@@ -585,6 +588,8 @@ class Population:
         self.gen = 0
         self.brain_id = len(self.pool)
         self.species_id = 0
+
+        Node.init_pos()
 
     def evaluate(self, eval_func, num_generations=float('inf'), report=True):
         while True:

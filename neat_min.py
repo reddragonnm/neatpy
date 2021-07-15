@@ -3,6 +3,8 @@ import enum
 import math
 import copy
 
+random.seed(11)
+
 
 def sigmoid(x):
     try:
@@ -342,7 +344,7 @@ class Brain:
             node1.id != node2.id and
             node1.state in [NodeState.input, NodeState.hidden, NodeState.bias] and
             node2.state in [NodeState.hidden, NodeState.output] and
-            node1.y <= node2.y
+            node1.y < node2.y
         )
 
     def predict(self, inputs):
