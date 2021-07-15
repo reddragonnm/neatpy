@@ -135,9 +135,6 @@ class Node:
 
         return NodeState.hidden
 
-    def __init__(self, node_id):
-        self.id = node_id
-
 
 class Connection:
     def __init__(self, fr, to, innov, weight=None):
@@ -201,7 +198,7 @@ class Brain:
         self.connections = connections
 
         if nodes is not None:
-            self.nodes.sort(key=lambda x: x.id)
+            self.nodes.sort()
             return
 
         node_id = 0
@@ -212,42 +209,29 @@ class Brain:
         input_nodes = []
         output_nodes = []
 
-        bias_nodes.append(Node(node_id))
+        bias_nodes.append(node_id)
         node_id += 1
 
         for _ in range(Options.num_inputs):
-            input_nodes.append(
-                Node(node_id))
+            input_nodes.append(node_id)
             node_id += 1
 
         for _ in range(Options.num_outputs):
-            output_nodes.append(Node(node_id))
+            output_nodes.append(node_id)
             node_id += 1
 
         self.nodes = bias_nodes + input_nodes + output_nodes
         self.connections = []
 
-        if Options.feature_selection:
-            inp = random.choice(input_nodes + bias_nodes)
-            out = random.choice(output_nodes)
-
-            self.connections.append(
-                Connection(
-                    inp.id,
-                    out.id,
-                    InnovTable.get_innov(inp.id, out.id).innov
-                )
-            )
-        else:
-            for node1 in input_nodes + bias_nodes:
-                for node2 in output_nodes:
-                    self.connections.append(
-                        Connection(
-                            node1.id,
-                            node2.id,
-                            InnovTable.get_innov(node1.id, node2.id).innov
-                        )
+        for node1 in input_nodes + bias_nodes:
+            for node2 in output_nodes:
+                self.connections.append(
+                    Connection(
+                        node1,
+                        node2,
+                        InnovTable.get_innov(node1, node2).innov
                     )
+                )
 
     def _add_conn(self):
         valid = []
@@ -255,7 +239,7 @@ class Brain:
         for node1 in self.nodes:
             for node2 in self.nodes:
                 if self._valid_conn(node1, node2):
-                    valid.append((node1.id, node2.id))
+                    valid.append((node1, node2))
 
         if valid:
             node1_id, node2_id = random.choice(valid)
@@ -281,7 +265,7 @@ class Brain:
         conn.enabled = False
 
         Node.set_pos(node_id, conn.fr, conn.to)
-        self.nodes.append(Node(node_id))
+        self.nodes.append(node_id)
 
         self.connections.append(
             Connection(
@@ -337,53 +321,51 @@ class Brain:
         Returns:
             Node: The Node which has the id -> node_id
         """
-        for node in self.nodes:
-            if node.id == node_id:
-                return node
+        return node_id
 
     def _valid_conn(self, node1, node2):
         for conn in self.connections:
-            if conn.fr == node1.id and conn.to == node2.id:
+            if conn.fr == node1 and conn.to == node2:
                 return False
 
         return (
-            node1.id != node2.id and
-            Node.get_state(node1.id) in [NodeState.input, NodeState.hidden, NodeState.bias] and
-            Node.get_state(node2.id) in [NodeState.hidden, NodeState.output] and
-            Node.pos[node1.id][1] < Node.pos[node2.id][1]
+            node1 != node2 and
+            Node.get_state(node1) in [NodeState.input, NodeState.hidden, NodeState.bias] and
+            Node.get_state(node2) in [NodeState.hidden, NodeState.output] and
+            Node.pos[node1][1] < Node.pos[node2][1]
         )
 
     def predict(self, inputs):
         assert len(inputs) == Options.num_inputs
 
-        depth = len(set([Node.pos[nn.id][1] for nn in self.nodes]))
+        depth = len(set([Node.pos[node][1] for node in self.nodes]))
         val = {}
 
         for node in self.nodes:
-            val[node.id] = 0
+            val[node] = 0
 
         for _ in range(depth):
             inp_num = 0
 
             for node in self.nodes:
-                if Node.get_state(node.id) == NodeState.input:
-                    val[node.id] = inputs[inp_num]
+                if Node.get_state(node) == NodeState.input:
+                    val[node] = inputs[inp_num]
                     inp_num += 1
 
-                elif Node.get_state(node.id) == NodeState.bias:
-                    val[node.id] = 1
+                elif Node.get_state(node) == NodeState.bias:
+                    val[node] = 1
 
                 else:
                     values = []
-                    for conn in self._get_input_connections(node.id):
+                    for conn in self._get_input_connections(node):
                         if conn.enabled:
                             values.append(
                                 conn.weight * val[conn.fr])
 
-                    val[node.id] = Options.activation_func(
+                    val[node] = Options.activation_func(
                         Options.aggregation_func(values))
 
-        return [val[node.id] for node in self.nodes if Node.get_state(node.id) == NodeState.output]
+        return [val[node] for node in self.nodes if Node.get_state(node) == NodeState.output]
 
     @staticmethod
     def crossover(mum, dad, baby_id=None):
@@ -512,7 +494,6 @@ class Brain:
 
         n_match += 1
         return (Options.excess_coeff * n_excess + Options.disjoint_coeff * n_disjoint) / max(n_g1, n_g2) + Options.weight_coeff * weight_difference / n_match
-
 
 
 class Species:
@@ -724,7 +705,7 @@ if __name__ == '__main__':
     best, solved = p.evaluate(evaluate, 400)
 
     c = [(i.fr, i.to) for i in best.connections]
-    print([i.id for i in best.nodes])
+    print([i for i in best.nodes])
     print(c)
 
     assert len(c) == len(set(c))
