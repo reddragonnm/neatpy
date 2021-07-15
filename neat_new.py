@@ -368,86 +368,76 @@ class Brain:
         return [val[node] for node in self.nodes if Node.get_state(node) == NodeState.output]
 
     @staticmethod
-    def crossover(mum, dad, baby_id=None):
-        n_mum = len(mum.connections)
+    def crossover(mom, dad, baby_id=None):
+        n_mom = len(mom.connections)
         n_dad = len(dad.connections)
 
-        if mum.fitness == dad.fitness:
-            if n_mum == n_dad:
-                better = random.choice([mum, dad])
-            elif n_mum < n_dad:
-                better = mum
+        if mom.fitness == dad.fitness:
+            if n_mom == n_dad:
+                better = random.choice([mom, dad])
+            elif n_mom < n_dad:
+                better = mom
             else:
                 better = dad
-        elif mum.fitness > dad.fitness:
-            better = mum
+        elif mom.fitness > dad.fitness:
+            better = mom
         else:
             better = dad
 
-        baby_nodes = []
+        baby_nodes = set()
         baby_connections = []
 
-        i_mum = i_dad = 0
-        node_ids = set()
+        i_mom = i_dad = 0
 
-        while i_mum < n_mum or i_dad < n_dad:
-            mum_gene = mum.connections[i_mum] if i_mum < n_mum else None
+        while i_mom < n_mom or i_dad < n_dad:
+            mom_gene = mom.connections[i_mom] if i_mom < n_mom else None
             dad_gene = dad.connections[i_dad] if i_dad < n_dad else None
 
             selected_gene = None
             selected_genome = None
 
-            if mum_gene and dad_gene:
-                if mum_gene.innov == dad_gene.innov:
+            if mom_gene and dad_gene:
+                if mom_gene.innov == dad_gene.innov:
                     selected_gene, selected_genome = random.choice(
-                        [(mum_gene, mum), (dad_gene, dad)])
+                        [(mom_gene, mom), (dad_gene, dad)])
 
-                    i_mum += 1
+                    i_mom += 1
                     i_dad += 1
 
-                elif dad_gene.innov < mum_gene.innov:
+                elif dad_gene.innov < mom_gene.innov:
                     if better == dad:
                         selected_gene = dad.connections[i_dad]
                         selected_genome = dad
                     i_dad += 1
 
-                elif mum_gene.innov < dad_gene.innov:
-                    if better == mum:
-                        selected_gene = mum_gene
-                        selected_genome = mum
-                    i_mum += 1
+                elif mom_gene.innov < dad_gene.innov:
+                    if better == mom:
+                        selected_gene = mom_gene
+                        selected_genome = mom
+                    i_mom += 1
 
-            elif mum_gene == None and dad_gene:
+            elif mom_gene == None and dad_gene:
                 if better == dad:
                     selected_gene = dad.connections[i_dad]
                     selected_genome = dad
                 i_dad += 1
 
-            elif mum_gene and dad_gene == None:
-                if better == mum:
-                    selected_gene = mum_gene
-                    selected_genome = mum
-                i_mum += 1
+            elif mom_gene and dad_gene == None:
+                if better == mom:
+                    selected_gene = mom_gene
+                    selected_genome = mom
+                i_mom += 1
 
             if selected_gene is not None and selected_genome is not None:
                 baby_connections.append(copy.copy(selected_gene))
 
-                if not selected_gene.fr in node_ids:
-                    node = selected_genome._get_node(selected_gene.fr)
-                    if node != None:
-                        baby_nodes.append(copy.copy(node))
-                        node_ids.add(selected_gene.fr)
-
-                if not selected_gene.to in node_ids:
-                    node = selected_genome._get_node(selected_gene.to)
-                    if node != None:
-                        baby_nodes.append(copy.copy(node))
-                        node_ids.add(selected_gene.to)
+                baby_nodes.add(selected_gene.fr)
+                baby_nodes.add(selected_gene.to)
 
         if True not in [l.enabled for l in baby_connections]:
             random.choice(baby_connections).enabled = True
 
-        return Brain(baby_id, baby_nodes, baby_connections)
+        return Brain(baby_id, list(baby_nodes), baby_connections)
 
     @staticmethod
     def distance(genome1, genome2):
