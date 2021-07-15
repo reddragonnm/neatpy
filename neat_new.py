@@ -302,26 +302,7 @@ class Brain:
                         Options.weight_mutate_power
 
     def _get_input_connections(self, node_id):
-        """Returns all connections where the connection leads to a node with given node_id
-
-        Args:
-            node_id (int): ID of the node
-
-        Returns:
-            List[Connections]: List of the connections where connection.to is node_id
-        """
         return [conn for conn in self.connections if conn.to == node_id]
-
-    def _get_node(self, node_id):
-        """Returns node with given node_id in self.nodes
-
-        Args:
-            node_id (int): ID of the node
-
-        Returns:
-            Node: The Node which has the id -> node_id
-        """
-        return node_id
 
     def _valid_conn(self, node1, node2):
         for conn in self.connections:
@@ -357,8 +338,8 @@ class Brain:
 
                 else:
                     values = []
-                    for conn in self._get_input_connections(node):
-                        if conn.enabled:
+                    for conn in self.connections:
+                        if conn.to == node and conn.enabled:
                             values.append(
                                 conn.weight * val[conn.fr])
 
