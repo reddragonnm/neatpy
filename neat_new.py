@@ -112,7 +112,7 @@ class Node:
             Node.pos[i] = 0, 0
 
         for i in range(Options.num_outputs):
-            Node.pos[Options.num_inputs + i + 1] = 0, 1
+            Node.pos[Options.num_inputs + i + 1] = 1, 0
 
         InnovTable.set_node_id(Options.num_inputs + Options.num_outputs + 1)
 
@@ -332,13 +332,13 @@ class Brain:
             node1 != node2 and
             Node.get_state(node1) in [NodeState.input, NodeState.hidden, NodeState.bias] and
             Node.get_state(node2) in [NodeState.hidden, NodeState.output] and
-            Node.pos[node1][1] < Node.pos[node2][1]
+            Node.pos[node1][0] < Node.pos[node2][0]
         )
 
     def predict(self, inputs):
         assert len(inputs) == Options.num_inputs
 
-        depth = len(set([Node.pos[node][1] for node in self.nodes]))
+        depth = len(set([Node.pos[node][0] for node in self.nodes]))
         val = {}
 
         for node in self.nodes:
