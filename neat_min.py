@@ -708,7 +708,7 @@ def evaluate(nns):
 
 if __name__ == '__main__':
     Options.set_options(2, 1, 150, 3.9, weight_mutate_prob=0.3,
-                        add_node_prob=0.05, add_conn_prob=0.1)
+                        add_conn_prob=0.1, max_nodes=6)
 
     p = Population()
     best, solved = p.evaluate(evaluate, 400)

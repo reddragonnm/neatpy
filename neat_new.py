@@ -298,9 +298,6 @@ class Brain:
                     conn.weight += random.uniform(-1, 1) * \
                         Options.weight_mutate_power
 
-    def _get_input_connections(self, node_id):
-        return [conn for conn in self.connections if conn.to == node_id]
-
     def _valid_conn(self, node1, node2):
         for conn in self.connections:
             if conn.fr == node1 and conn.to == node2:
@@ -667,7 +664,7 @@ def evaluate(nns):
 
 if __name__ == '__main__':
     Options.set_options(2, 1, 150, 3.9, weight_mutate_prob=0.3,
-                        add_node_prob=0.05, add_conn_prob=0.1)
+                        add_conn_prob=0.1, max_nodes=6)
 
     p = Population()
     best, solved = p.evaluate(evaluate, 400)
