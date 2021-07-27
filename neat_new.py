@@ -203,8 +203,6 @@ class Brain:
 
         node_id = 0
 
-        self.nodes = []
-
         bias_nodes = []
         input_nodes = []
         output_nodes = []
@@ -267,22 +265,21 @@ class Brain:
         Node.set_pos(node_id, conn.fr, conn.to)
         self.nodes.append(node_id)
 
-        self.connections.append(
-            Connection(
-                conn.fr,
-                node_id,
-                InnovTable.get_innov(conn.fr, node_id).innov,
-                weight=1
-            )
-        )
-
-        self.connections.append(
-            Connection(
-                node_id,
-                conn.to,
-                InnovTable.get_innov(node_id, conn.to).innov,
-                weight=conn.weight
-            )
+        self.connections.extend(
+            [
+                Connection(
+                    conn.fr,
+                    node_id,
+                    InnovTable.get_innov(conn.fr, node_id).innov,
+                    weight=1
+                ),
+                Connection(
+                    node_id,
+                    conn.to,
+                    InnovTable.get_innov(node_id, conn.to).innov,
+                    weight=conn.weight
+                )
+            ]
         )
 
     def mutate(self):
