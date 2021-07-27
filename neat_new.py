@@ -198,7 +198,6 @@ class Brain:
         self.connections = connections
 
         if nodes is not None:
-            self.nodes.sort()
             return
 
         node_id = 0
@@ -218,7 +217,7 @@ class Brain:
             output_nodes.append(node_id)
             node_id += 1
 
-        self.nodes = bias_nodes + input_nodes + output_nodes
+        self.nodes = set(bias_nodes + input_nodes + output_nodes)
         self.connections = []
 
         for node1 in input_nodes + bias_nodes:
@@ -263,7 +262,7 @@ class Brain:
         conn.enabled = False
 
         Node.set_pos(node_id, conn.fr, conn.to)
-        self.nodes.append(node_id)
+        self.nodes.add(node_id)
 
         self.connections.extend(
             [
@@ -412,7 +411,7 @@ class Brain:
         if True not in [l.enabled for l in baby_connections]:
             random.choice(baby_connections).enabled = True
 
-        return Brain(baby_id, list(baby_nodes), baby_connections)
+        return Brain(baby_id, (baby_nodes), baby_connections)
 
     @staticmethod
     def distance(genome1, genome2):
