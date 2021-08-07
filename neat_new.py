@@ -136,13 +136,13 @@ class Node:
         return NodeState.hidden
 
 
-def new_conn(fr, to, innov, weight=None):
+def new_conn(fr, to, weight=None):
     return {
         'fr': fr,
         'to': to,
         'weight': weight or random.uniform(-1, 1) * Options.weight_init_range,
         'enabled': True,
-        'innov': innov
+        'innov': InnovTable.get_innov(fr, to)
     }
 
 
@@ -200,17 +200,9 @@ class Brain:
             node_id += 1
 
         self.nodes = set(bias_nodes + input_nodes + output_nodes)
-        self.connections = []
-
-        for node1 in input_nodes + bias_nodes:
-            for node2 in output_nodes:
-                self.connections.append(
-                    new_conn(
-                        node1,
-                        node2,
-                        InnovTable.get_innov(node1, node2)
-                    )
-                )
+        self.connections = [new_conn(n1, n2)
+                            for n1 in input_nodes + bias_nodes
+                            for n2 in output_nodes]
 
     def _add_conn(self):
         valid = []
@@ -223,13 +215,7 @@ class Brain:
         if valid:
             node1_id, node2_id = random.choice(valid)
 
-            self.connections.append(
-                new_conn(
-                    node1_id,
-                    node2_id,
-                    InnovTable.get_innov(node1_id, node2_id)
-                )
-            )
+            self.connections.append(new_conn(node1_id, node2_id))
 
     def _add_node(self):
         valid = [
@@ -248,18 +234,8 @@ class Brain:
 
         self.connections.extend(
             [
-                new_conn(
-                    conn['fr'],
-                    node_id,
-                    InnovTable.get_innov(conn['fr'], node_id),
-                    weight=1
-                ),
-                new_conn(
-                    node_id,
-                    conn['to'],
-                    InnovTable.get_innov(node_id, conn['to']),
-                    weight=conn['weight']
-                )
+                new_conn(conn['fr'], node_id, weight=1),
+                new_conn(node_id, conn['to'], weight=conn['weight'])
             ]
         )
 
