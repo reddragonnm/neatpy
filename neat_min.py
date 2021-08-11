@@ -3,7 +3,7 @@ import enum
 import math
 import copy
 
-random.seed(11)
+random.seed(10)
 
 
 def sigmoid(x):

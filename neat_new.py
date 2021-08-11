@@ -175,12 +175,12 @@ class InnovTable:
 
 
 class Brain:
-    def __init__(self, genome_id, nodes=None, connections=None):
+    def __init__(self, genome_id, nodes=None, conns=None):
         self.id = genome_id
         self.fitness = 0
 
         self.nodes = nodes
-        self.connections = connections
+        self.conns = conns
 
         if nodes is not None:
             return
@@ -200,9 +200,9 @@ class Brain:
             node_id += 1
 
         self.nodes = set(bias_nodes + input_nodes + output_nodes)
-        self.connections = [new_conn(n1, n2)
-                            for n1 in input_nodes + bias_nodes
-                            for n2 in output_nodes]
+        self.conns = [new_conn(n1, n2)
+                      for n1 in input_nodes + bias_nodes
+                      for n2 in output_nodes]
 
     def _add_conn(self):
         valid = []
@@ -215,11 +215,11 @@ class Brain:
         if valid:
             node1_id, node2_id = random.choice(valid)
 
-            self.connections.append(new_conn(node1_id, node2_id))
+            self.conns.append(new_conn(node1_id, node2_id))
 
     def _add_node(self):
         valid = [
-            conn for conn in self.connections if conn['enabled'] and conn['fr'] != 0]
+            conn for conn in self.conns if conn['enabled'] and conn['fr'] != 0]
 
         if valid:
             conn = random.choice(valid)
@@ -232,7 +232,7 @@ class Brain:
         Node.set_pos(node_id, conn['fr'], conn['to'])
         self.nodes.add(node_id)
 
-        self.connections.extend(
+        self.conns.extend(
             [
                 new_conn(conn['fr'], node_id, weight=1),
                 new_conn(node_id, conn['to'], weight=conn['weight'])
@@ -246,7 +246,7 @@ class Brain:
         if random.random() < Options.add_conn_prob:
             self._add_conn()
 
-        for conn in self.connections:
+        for conn in self.conns:
             if random.random() < Options.weight_mutate_prob:
                 if random.random() < Options.new_weight_prob:
                     conn['weight'] = random.uniform(-1, 1) * \
@@ -256,7 +256,7 @@ class Brain:
                         Options.weight_mutate_power
 
     def _valid_conn(self, node1, node2):
-        for conn in self.connections:
+        for conn in self.conns:
             if conn['fr'] == node1 and conn['to'] == node2:
                 return False
 
@@ -289,7 +289,7 @@ class Brain:
 
                 else:
                     values = []
-                    for conn in self.connections:
+                    for conn in self.conns:
                         if conn['to'] == node and conn['enabled']:
                             values.append(conn['weight'] * val[conn['fr']])
 
@@ -300,8 +300,8 @@ class Brain:
 
     @staticmethod
     def crossover(mom, dad, baby_id=None):
-        n_mom = len(mom.connections)
-        n_dad = len(dad.connections)
+        n_mom = len(mom.conns)
+        n_dad = len(dad.conns)
 
         if mom.fitness == dad.fitness:
             if n_mom == n_dad:
@@ -321,8 +321,8 @@ class Brain:
         i_mom = i_dad = 0
 
         while i_mom < n_mom or i_dad < n_dad:
-            mom_gene = mom.connections[i_mom] if i_mom < n_mom else None
-            dad_gene = dad.connections[i_dad] if i_dad < n_dad else None
+            mom_gene = mom.conns[i_mom] if i_mom < n_mom else None
+            dad_gene = dad.conns[i_dad] if i_dad < n_dad else None
 
             selected_gene = None
             selected_genome = None
@@ -337,7 +337,7 @@ class Brain:
 
                 elif dad_gene.innov < mom_gene.innov:
                     if better == dad:
-                        selected_gene = dad.connections[i_dad]
+                        selected_gene = dad.conns[i_dad]
                         selected_genome = dad
                     i_dad += 1
 
@@ -349,7 +349,7 @@ class Brain:
 
             elif mom_gene == None and dad_gene:
                 if better == dad:
-                    selected_gene = dad.connections[i_dad]
+                    selected_gene = dad.conns[i_dad]
                     selected_genome = dad
                 i_dad += 1
 
@@ -375,8 +375,8 @@ class Brain:
         n_match = n_disjoint = n_excess = 0
         weight_difference = 0
 
-        n_g1 = len(genome1.connections)
-        n_g2 = len(genome2.connections)
+        n_g1 = len(genome1.conns)
+        n_g2 = len(genome2.conns)
         i_g1 = i_g2 = 0
 
         while i_g1 < n_g1 or i_g2 < n_g2:
@@ -391,8 +391,8 @@ class Brain:
                 i_g1 += 1
                 continue
 
-            conn1 = genome1.connections[i_g1]
-            conn2 = genome2.connections[i_g2]
+            conn1 = genome1.conns[i_g1]
+            conn2 = genome2.conns[i_g2]
 
             # match
             if conn1['innov'] == conn2['innov']:
@@ -415,6 +415,10 @@ class Brain:
 
         n_match += 1
         return (Options.excess_coeff * n_excess + Options.disjoint_coeff * n_disjoint) / max(n_g1, n_g2) + Options.weight_coeff * weight_difference / n_match
+
+    @staticmethod
+    def distance2(self, b1, b2):
+        pass
 
 
 class Species:
@@ -625,7 +629,7 @@ if __name__ == '__main__':
     p = Population()
     best, solved = p.evaluate(evaluate, 400)
 
-    c = [(i['fr'], i['to']) for i in best.connections]
+    c = [(i['fr'], i['to']) for i in best.conns]
     print([i for i in best.nodes])
     print(c)
 
