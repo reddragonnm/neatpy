@@ -25,7 +25,6 @@ class Options:
         activation_func=sigmoid,
         aggregation_func=sum,
 
-        excess_coeff=1,
         disjoint_coeff=1,
         weight_coeff=0.5,
 
@@ -382,12 +381,12 @@ class Brain:
         while i_g1 < n_g1 or i_g2 < n_g2:
             # excess
             if i_g1 == n_g1:
-                n_excess += 1
+                n_disjoint += 1
                 i_g2 += 1
                 continue
 
             if i_g2 == n_g2:
-                n_excess += 1
+                n_disjoint += 1
                 i_g1 += 1
                 continue
 
@@ -414,7 +413,7 @@ class Brain:
                 continue
 
         n_match += 1
-        return (Options.excess_coeff * n_excess + Options.disjoint_coeff * n_disjoint) / max(n_g1, n_g2) + Options.weight_coeff * weight_difference / n_match
+        return (Options.disjoint_coeff * n_disjoint) / max(n_g1, n_g2) + Options.weight_coeff * weight_difference / n_match
 
     @staticmethod
     def distance2(self, b1, b2):
