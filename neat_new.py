@@ -146,11 +146,9 @@ class Node:
 
 def new_conn(fr, to, weight=None):
     return {
-        'fr': fr,
-        'to': to,
+        'innov': (fr, to),
         'weight': weight or random.uniform(-1, 1) * Options.weight_init_range,
-        'enabled': True,
-        'innov': (fr, to)
+        'enabled': True
     }
 
 
@@ -199,23 +197,23 @@ class Brain:
 
     def _add_node(self):
         valid = [
-            conn for conn in self.conns if conn['enabled'] and conn['fr'] != 0]
+            conn for conn in self.conns if conn['enabled'] and conn['innov'][0] != 0]
 
         if valid:
             conn = random.choice(valid)
         else:
             return
 
-        node_id = Node.get_innov(conn['fr'], conn['to'])
+        node_id = Node.get_innov(conn['innov'][0], conn['innov'][1])
         conn['enabled'] = False
 
-        Node.set_pos(node_id, conn['fr'], conn['to'])
+        Node.set_pos(node_id, conn['innov'][0], conn['innov'][1])
         self.nodes.add(node_id)
 
         self.conns.extend(
             [
-                new_conn(conn['fr'], node_id, weight=1),
-                new_conn(node_id, conn['to'], weight=conn['weight'])
+                new_conn(conn['innov'][0], node_id, weight=1),
+                new_conn(node_id, conn['innov'][1], weight=conn['weight'])
             ]
         )
 
@@ -237,7 +235,7 @@ class Brain:
 
     def _valid_conn(self, node1, node2):
         for conn in self.conns:
-            if conn['fr'] == node1 and conn['to'] == node2:
+            if conn['innov'][0] == node1 and conn['innov'][1] == node2:
                 return False
 
         return (
@@ -270,8 +268,9 @@ class Brain:
                 else:
                     values = []
                     for conn in self.conns:
-                        if conn['to'] == node and conn['enabled']:
-                            values.append(conn['weight'] * val[conn['fr']])
+                        if conn['innov'][1] == node and conn['enabled']:
+                            values.append(conn['weight'] *
+                                          val[conn['innov'][0]])
 
                     val[node] = Options.activation_func(
                         Options.aggregation_func(values))
@@ -342,8 +341,8 @@ class Brain:
             if selected_gene is not None and selected_genome is not None:
                 baby_connections.append(copy.copy(selected_gene))
 
-                baby_nodes.add(selected_gene['fr'])
-                baby_nodes.add(selected_gene['to'])
+                baby_nodes.add(selected_gene['innov'][0])
+                baby_nodes.add(selected_gene['innov'][1])
 
         if True not in [l['enabled'] for l in baby_connections]:
             random.choice(baby_connections).enabled = True
@@ -577,7 +576,7 @@ if __name__ == '__main__':
     p = Population()
     best, solved = p.evaluate(evaluate, 400)
 
-    c = [(i['fr'], i['to']) for i in best.conns]
+    c = [(i['innov'][0], i['innov'][1]) for i in best.conns]
     print([i for i in best.nodes])
     print(c)
 
