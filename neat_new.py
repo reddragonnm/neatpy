@@ -2,7 +2,7 @@ import random
 import math
 import copy
 
-random.seed(10)
+random.seed(1)
 
 
 def sigmoid(x):
@@ -64,7 +64,6 @@ class Options:
         Options.activation_func = activation_func
         Options.aggregation_func = aggregation_func
 
-        Options.excess_coeff = excess_coeff
         Options.disjoint_coeff = disjoint_coeff
         Options.weight_coeff = weight_coeff
 
@@ -369,55 +368,23 @@ class Brain:
 
         return Brain(baby_id, (baby_nodes), baby_connections)
 
-    @staticmethod
-    def distance(genome1, genome2):
-        n_match = n_disjoint = n_excess = 0
+    def distance(b1, b2):
+        n_match = 0
         weight_difference = 0
 
-        n_g1 = len(genome1.conns)
-        n_g2 = len(genome2.conns)
-        i_g1 = i_g2 = 0
+        n_g1 = len(b1.conns)
+        n_g2 = len(b2.conns)
 
-        while i_g1 < n_g1 or i_g2 < n_g2:
-            # excess
-            if i_g1 == n_g1:
-                n_disjoint += 1
-                i_g2 += 1
-                continue
+        for c1 in b1.conns:
+            for c2 in b2.conns:
+                if c1['innov'] == c2['innov']:
+                    n_match += 1
+                    weight_difference += abs(c1['weight'] - c2['weight'])
 
-            if i_g2 == n_g2:
-                n_disjoint += 1
-                i_g1 += 1
-                continue
-
-            conn1 = genome1.conns[i_g1]
-            conn2 = genome2.conns[i_g2]
-
-            # match
-            if conn1['innov'] == conn2['innov']:
-                n_match += 1
-                i_g1 += 1
-                i_g2 += 1
-                weight_difference += abs(conn1['weight'] - conn2['weight'])
-                continue
-
-            # disjoint
-            if conn1['innov'] < conn2['innov']:
-                n_disjoint += 1
-                i_g1 += 1
-                continue
-
-            if conn1['innov'] > conn2['innov']:
-                n_disjoint += 1
-                i_g2 += 1
-                continue
-
+        n_disjoint = (n_g1 - n_match) + (n_g2 - n_match)
         n_match += 1
-        return (Options.disjoint_coeff * n_disjoint) / max(n_g1, n_g2) + Options.weight_coeff * weight_difference / n_match
 
-    @staticmethod
-    def distance2(self, b1, b2):
-        pass
+        return (Options.disjoint_coeff * n_disjoint) / max(n_g1, n_g2) + Options.weight_coeff * weight_difference / n_match
 
 
 class Species:

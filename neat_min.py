@@ -3,7 +3,7 @@ import enum
 import math
 import copy
 
-random.seed(10)
+random.seed(1)
 
 
 def sigmoid(x):
@@ -526,6 +526,9 @@ class Species:
         n_g2 = len(genome2.connections)
         i_g1 = i_g2 = 0
 
+        g1_sort = sorted(genome1.connections, key=lambda x: x.innov)
+        g2_sort = sorted(genome2.connections, key=lambda x: x.innov)
+
         while i_g1 < n_g1 or i_g2 < n_g2:
             # excess
             if i_g1 == n_g1:
@@ -538,8 +541,8 @@ class Species:
                 i_g1 += 1
                 continue
 
-            conn1 = genome1.connections[i_g1]
-            conn2 = genome2.connections[i_g2]
+            conn1 = g1_sort[i_g1]
+            conn2 = g2_sort[i_g2]
 
             # match
             if conn1.innov == conn2.innov:
