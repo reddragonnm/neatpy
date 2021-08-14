@@ -103,6 +103,8 @@ class NodeState:
 
 class Node:
     pos = {}
+    node_id = 0
+    hist = {}
 
     @staticmethod
     def init_pos():
@@ -112,7 +114,7 @@ class Node:
         for i in range(Options.num_outputs):
             Node.pos[Options.num_inputs + i + 1] = 1, 0
 
-        InnovTable.set_node_id(Options.num_inputs + Options.num_outputs + 1)
+        Node.node_id = Options.num_inputs + Options.num_outputs + 1
 
     @staticmethod
     def set_pos(node_id, fr, to):
@@ -133,6 +135,14 @@ class Node:
 
         return NodeState.hidden
 
+    @staticmethod
+    def get_innov(fr, to):
+        if Node.hist.get((fr, to)) is None:
+            Node.hist[fr, to] = Node.node_id
+            Node.node_id += 1
+
+        return Node.hist[fr, to]
+
 
 def new_conn(fr, to, weight=None):
     return {
@@ -140,36 +150,8 @@ def new_conn(fr, to, weight=None):
         'to': to,
         'weight': weight or random.uniform(-1, 1) * Options.weight_init_range,
         'enabled': True,
-        'innov': InnovTable.get_innov(fr, to)
+        'innov': (fr, to)
     }
-
-
-class InnovTable:
-    conn_id = 0
-    node_id = 0
-
-    conn_hist = {}
-    node_hist = {}
-
-    @staticmethod
-    def set_node_id(node_id):
-        InnovTable.node_id = max(InnovTable.node_id, node_id)
-
-    @staticmethod
-    def get_innov(fr, to, new_conn=True):
-        if new_conn:
-            if InnovTable.conn_hist.get((fr, to)) is None:
-                InnovTable.conn_hist[fr, to] = InnovTable.conn_id
-                InnovTable.conn_id += 1
-
-            return InnovTable.conn_hist[fr, to]
-
-        else:
-            if InnovTable.node_hist.get((fr, to)) is None:
-                InnovTable.node_hist[fr, to] = InnovTable.node_id
-                InnovTable.node_id += 1
-
-            return InnovTable.node_hist[fr, to]
 
 
 class Brain:
@@ -224,7 +206,7 @@ class Brain:
         else:
             return
 
-        node_id = InnovTable.get_innov(conn['fr'], conn['to'], False)
+        node_id = Node.get_innov(conn['fr'], conn['to'])
         conn['enabled'] = False
 
         Node.set_pos(node_id, conn['fr'], conn['to'])
