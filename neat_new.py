@@ -153,8 +153,7 @@ def new_conn(fr, to, weight=None):
 
 
 class Brain:
-    def __init__(self, genome_id, nodes=None, conns=None):
-        self.id = genome_id
+    def __init__(self, nodes=None, conns=None):
         self.fitness = 0
 
         self.nodes = nodes
@@ -278,7 +277,7 @@ class Brain:
         return [val[node] for node in self.nodes if Node.get_state(node) == NodeState.output]
 
     @staticmethod
-    def crossover(mom, dad, baby_id=None):
+    def crossover(mom, dad):
         n_mom = len(mom.conns)
         n_dad = len(dad.conns)
 
@@ -340,14 +339,12 @@ class Brain:
 
             if selected_gene is not None and selected_genome is not None:
                 baby_connections.append(copy.copy(selected_gene))
-
-                baby_nodes.add(selected_gene['innov'][0])
-                baby_nodes.add(selected_gene['innov'][1])
+                baby_nodes.update(selected_gene['innov'])
 
         if True not in [l['enabled'] for l in baby_connections]:
             random.choice(baby_connections).enabled = True
 
-        return Brain(baby_id, (baby_nodes), baby_connections)
+        return Brain((baby_nodes), baby_connections)
 
     def distance(b1, b2):
         n_match = 0
@@ -369,11 +366,9 @@ class Brain:
 
 
 class Species:
-    def __init__(self, species_id, member):
+    def __init__(self, member):
         self.best = member
-
         self.pool = [member]
-        self.id = species_id
 
         self.age = 0
         self.stagnation = 0
@@ -430,14 +425,11 @@ class Species:
 
 class Population:
     def __init__(self):
-        self.pool = [Brain(i) for i in range(Options.population_size)]
+        self.pool = [Brain() for _ in range(Options.population_size)]
         self.species = []
 
         self.best = self.pool[0]
-
         self.gen = 0
-        self.brain_id = len(self.pool)
-        self.species_id = 0
 
         Node.init_pos()
 
@@ -465,8 +457,7 @@ class Population:
                     break
 
             if not added:
-                self.species.append(Species(self.species_id, brain))
-                self.species_id += 1
+                self.species.append(Species(brain))
 
         self.species[:] = [sp for sp in self.species if len(sp.pool) > 0]
 
@@ -488,8 +479,7 @@ class Population:
 
                 if random.random() < Options.crossover_rate:
                     brain2 = s.get_brain()
-                    child = Brain.crossover(brain1, brain2, self.brain_id)
-                    self.brain_id += 1
+                    child = Brain.crossover(brain1, brain2)
                 else:
                     # child = copy.copy(brain1)
                     child = Brain.crossover(brain1, brain1)
@@ -501,8 +491,7 @@ class Population:
             s.purge()
 
         while len(self.pool) < Options.population_size:
-            self.pool.append(Brain(self.brain_id))
-            self.brain_id += 1
+            self.pool.append(Brain())
 
     def _sort_pool(self):
         self.pool.sort(key=lambda x: x.fitness, reverse=True)
