@@ -2,7 +2,7 @@ import random
 import math
 import copy
 
-random.seed(1)
+# random.seed(1)
 
 
 def sigmoid(x):
@@ -146,10 +146,25 @@ class Node:
 
 def new_conn(fr, to, weight=None):
     return {
-        'innov': (fr, to),
+        'fr': fr,
+        'to': to,
+        'innov': InnovTable.get_innov(fr, to),
         'weight': weight or random.uniform(-1, 1) * Options.weight_init_range,
         'enabled': True
     }
+
+
+class InnovTable:
+    conn_id = 0
+    conn_hist = {}
+
+    @staticmethod
+    def get_innov(fr, to):
+        if InnovTable.conn_hist.get((fr, to)) is None:
+            InnovTable.conn_hist[fr, to] = InnovTable.conn_id
+            InnovTable.conn_id += 1
+
+        return InnovTable.conn_hist[fr, to]
 
 
 class Brain:
@@ -187,23 +202,23 @@ class Brain:
 
     def _add_node(self):
         valid = [
-            conn for conn in self.conns if conn['enabled'] and conn['innov'][0] != 0]
+            conn for conn in self.conns if conn['enabled'] and conn['fr'] != 0]
 
         if valid:
             conn = random.choice(valid)
         else:
             return
 
-        node_id = Node.get_innov(conn['innov'][0], conn['innov'][1])
+        node_id = Node.get_innov(conn['fr'], conn['to'])
         conn['enabled'] = False
 
-        Node.set_pos(node_id, conn['innov'][0], conn['innov'][1])
+        Node.set_pos(node_id, conn['fr'], conn['to'])
         self.nodes.add(node_id)
 
         self.conns.extend(
             [
-                new_conn(conn['innov'][0], node_id, weight=1),
-                new_conn(node_id, conn['innov'][1], weight=conn['weight'])
+                new_conn(conn['fr'], node_id, weight=1),
+                new_conn(node_id, conn['to'], weight=conn['weight'])
             ]
         )
 
@@ -225,7 +240,7 @@ class Brain:
 
     def _valid_conn(self, node1, node2):
         for conn in self.conns:
-            if conn['innov'][0] == node1 and conn['innov'][1] == node2:
+            if conn['fr'] == node1 and conn['to'] == node2:
                 return False
 
         return (
@@ -258,9 +273,9 @@ class Brain:
                 else:
                     values = []
                     for conn in self.conns:
-                        if conn['innov'][1] == node and conn['enabled']:
+                        if conn['to'] == node and conn['enabled']:
                             values.append(conn['weight'] *
-                                          val[conn['innov'][0]])
+                                          val[conn['fr']])
 
                     val[node] = Options.activation_func(
                         Options.aggregation_func(values))
@@ -302,12 +317,12 @@ class Brain:
                     i_mom += 1
                     i_dad += 1
 
-                elif dad_conn.innov < mom_conn.innov:
+                elif dad_conn['innov'] < mom_conn['innov']:
                     if dad is better:
                         selected_conn = dad.conns[i_dad]
                     i_dad += 1
 
-                elif mom_conn.innov < dad_conn.innov:
+                elif mom_conn['innov'] < dad_conn['innov']:
                     if mom is better:
                         selected_conn = mom_conn
                     i_mom += 1
@@ -325,16 +340,13 @@ class Brain:
 
             if selected_conn is not None:
                 baby_connections.append(copy.copy(selected_conn))
-                baby_nodes.update(selected_conn['innov'])
+                baby_nodes.add(selected_conn['fr'])
+                baby_nodes.add(selected_conn['to'])
 
         if True not in [l['enabled'] for l in baby_connections]:
             random.choice(baby_connections).enabled = True
 
-        return Brain((baby_nodes), baby_connections)
-
-    @staticmethod
-    def crossover2(mom, dad):
-        pass
+        return Brain(baby_nodes, baby_connections)
 
     def distance(b1, b2):
         n_match = 0
@@ -374,7 +386,7 @@ class Species:
         self.pool[:] = []
 
     def get_brain(self):
-        best = self.pool[0]
+        best = random.choice(self.pool)
         for _ in range(min(len(self.pool), Options.tries_tournament_selection)):
             g = random.choice(self.pool)
             if g.fitness > best.fitness:
@@ -465,14 +477,12 @@ class Population:
                 new_pool.append(s.best)
 
             while len(new_pool) < s.spawns_required:
-                brain1 = s.get_brain()
+                brain = s.get_brain()
 
                 if random.random() < Options.crossover_rate:
-                    brain2 = s.get_brain()
-                    child = Brain.crossover(brain1, brain2)
+                    child = Brain.crossover(brain, s.get_brain())
                 else:
-                    # child = copy.copy(brain1)
-                    child = Brain.crossover(brain1, brain1)
+                    child = Brain.crossover(brain, brain)
 
                 child.mutate()
                 new_pool.append(child)
@@ -555,7 +565,7 @@ if __name__ == '__main__':
     p = Population()
     best, solved = p.evaluate(evaluate, 400)
 
-    c = [(i['innov'][0], i['innov'][1]) for i in best.conns]
+    c = [(i['fr'], i['to']) for i in best.conns]
     print([i for i in best.nodes])
     print(c)
 

@@ -482,7 +482,7 @@ class Species:
         self.pool[:] = []
 
     def get_brain(self):
-        best = self.pool[0]
+        best = random.choice(self.pool)
         for _ in range(min(len(self.pool), Options.tries_tournament_selection)):
             g = random.choice(self.pool)
             if g.fitness > best.fitness:
