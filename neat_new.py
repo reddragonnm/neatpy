@@ -162,19 +162,10 @@ class Brain:
         if nodes is not None:
             return
 
-        node_id = 1
-
         bias_nodes = [0]
-        input_nodes = []
-        output_nodes = []
-
-        for _ in range(Options.num_inputs):
-            input_nodes.append(node_id)
-            node_id += 1
-
-        for _ in range(Options.num_outputs):
-            output_nodes.append(node_id)
-            node_id += 1
+        input_nodes = [i + 1 for i in range(Options.num_inputs)]
+        output_nodes = [i + Options.num_inputs +
+                        1 for i in range(Options.num_outputs)]
 
         self.nodes = set(bias_nodes + input_nodes + output_nodes)
         self.conns = [new_conn(n1, n2)
@@ -345,6 +336,10 @@ class Brain:
             random.choice(baby_connections).enabled = True
 
         return Brain((baby_nodes), baby_connections)
+
+    @staticmethod
+    def crossover2(mom, dad):
+        pass
 
     def distance(b1, b2):
         n_match = 0
