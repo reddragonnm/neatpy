@@ -290,41 +290,42 @@ class Brain:
         i_mom = i_dad = 0
 
         while i_mom < n_mom or i_dad < n_dad:
-            mom_gene = mom.conns[i_mom] if i_mom < n_mom else None
-            dad_gene = dad.conns[i_dad] if i_dad < n_dad else None
+            mom_conn = mom.conns[i_mom] if i_mom < n_mom else None
+            dad_conn = dad.conns[i_dad] if i_dad < n_dad else None
 
-            selected_gene = None
+            selected_conn = None
 
-            if mom_gene and dad_gene:
-                if mom_gene['innov'] == dad_gene['innov']:
-                    selected_gene = random.choice([mom_gene, dad_gene])
+            if mom_conn and dad_conn:
+                if mom_conn['innov'] == dad_conn['innov']:
+                    selected_conn = random.choice([mom_conn, dad_conn])
 
                     i_mom += 1
                     i_dad += 1
 
-                elif dad_gene.innov < mom_gene.innov:
-                    if better == dad:
-                        selected_gene = dad.conns[i_dad]
+                elif dad_conn.innov < mom_conn.innov:
+                    if dad is better:
+                        selected_conn = dad.conns[i_dad]
                     i_dad += 1
 
-                elif mom_gene.innov < dad_gene.innov:
-                    if better == mom:
-                        selected_gene = mom_gene
+                elif mom_conn.innov < dad_conn.innov:
+                    if mom is better:
+                        selected_conn = mom_conn
                     i_mom += 1
 
-            elif mom_gene == None and dad_gene:
-                if better == dad:
-                    selected_gene = dad.conns[i_dad]
+            elif mom_conn is None and dad_conn and dad is better:
+                selected_conn = dad_conn
                 i_dad += 1
 
-            elif mom_gene and dad_gene == None:
-                if better == mom:
-                    selected_gene = mom_gene
+            elif mom_conn and dad_conn is None and mom is better:
+                selected_conn = mom_conn
                 i_mom += 1
 
-            if selected_gene is not None:
-                baby_connections.append(copy.copy(selected_gene))
-                baby_nodes.update(selected_gene['innov'])
+            else:
+                break
+
+            if selected_conn is not None:
+                baby_connections.append(copy.copy(selected_conn))
+                baby_nodes.update(selected_conn['innov'])
 
         if True not in [l['enabled'] for l in baby_connections]:
             random.choice(baby_connections).enabled = True
