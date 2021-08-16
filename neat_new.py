@@ -294,12 +294,10 @@ class Brain:
             dad_gene = dad.conns[i_dad] if i_dad < n_dad else None
 
             selected_gene = None
-            selected_genome = None
 
             if mom_gene and dad_gene:
                 if mom_gene['innov'] == dad_gene['innov']:
-                    selected_gene, selected_genome = random.choice(
-                        [(mom_gene, mom), (dad_gene, dad)])
+                    selected_gene = random.choice([mom_gene, dad_gene])
 
                     i_mom += 1
                     i_dad += 1
@@ -307,28 +305,24 @@ class Brain:
                 elif dad_gene.innov < mom_gene.innov:
                     if better == dad:
                         selected_gene = dad.conns[i_dad]
-                        selected_genome = dad
                     i_dad += 1
 
                 elif mom_gene.innov < dad_gene.innov:
                     if better == mom:
                         selected_gene = mom_gene
-                        selected_genome = mom
                     i_mom += 1
 
             elif mom_gene == None and dad_gene:
                 if better == dad:
                     selected_gene = dad.conns[i_dad]
-                    selected_genome = dad
                 i_dad += 1
 
             elif mom_gene and dad_gene == None:
                 if better == mom:
                     selected_gene = mom_gene
-                    selected_genome = mom
                 i_mom += 1
 
-            if selected_gene is not None and selected_genome is not None:
+            if selected_gene is not None:
                 baby_connections.append(copy.copy(selected_gene))
                 baby_nodes.update(selected_gene['innov'])
 
