@@ -2,7 +2,7 @@ import random
 import math
 import copy
 
-# random.seed(1)
+random.seed(11)
 
 
 def sigmoid(x):
